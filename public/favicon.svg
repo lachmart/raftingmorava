@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#09afe6"/>
+  <!-- paddle -->
+  <rect x="30" y="8" width="4" height="30" rx="2" transform="rotate(38 32 23)" fill="#ffffff"/>
+  <ellipse cx="17.5" cy="13.5" rx="5.5" ry="8" transform="rotate(38 17.5 13.5)" fill="#ffffff"/>
+  <!-- raft (inflatable, top view) -->
+  <rect x="12" y="34" width="40" height="16" rx="8" fill="none" stroke="#ffffff" stroke-width="4"/>
+  <line x1="14" y1="42" x2="50" y2="42" stroke="#ffffff" stroke-width="2.5"/>
+  <!-- wave -->
+  <path d="M8 56 q5 -5 10 0 t10 0 t10 0 t10 0 t8 0" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
+</svg>
