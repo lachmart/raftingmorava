@@ -24,6 +24,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('')
+            ->viteTheme('resources/css/filament/admin/theme.css')
             ->login()
             ->profile() // own profile (name, email, password) – each user edits their own
             // Colors matched to the raftingmorava.cz website (water blue #09afe6 + green accent).
@@ -34,6 +35,9 @@ class AdminPanelProvider extends PanelProvider
                 'gray' => Color::Slate,
             ])
             ->brandName('Rafting Morava')
+            ->brandLogo(asset('logo-cerna.png'))
+            ->darkModeBrandLogo(asset('logo-bila.png'))
+            ->brandLogoHeight('2.5rem')
             ->favicon(asset('favicon.png'))
             // The left menu can collapse on desktop into a narrow icon strip (less space).
             ->sidebarCollapsibleOnDesktop()

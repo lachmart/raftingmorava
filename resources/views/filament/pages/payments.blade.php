@@ -10,36 +10,35 @@
         </x-filament::section>
     @else
         <x-filament::section>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-                <span class="text-gray-500 dark:text-gray-400" style="font-size:0.875rem;">
+            <div class="mb-4 flex items-center justify-between">
+                <span class="text-sm text-gray-500 dark:text-gray-400">
                     Lidé s nevyplacenými odměnami za proběhlé dny výletů.
                 </span>
-                <span style="font-size:0.875rem; font-weight:600;">
+                <span class="text-sm font-semibold">
                     Celkem dluženo: {{ number_format((float) $grandTotal, 0, ',', ' ') }} Kč
                 </span>
             </div>
 
-            <table style="width:100%; border-collapse:collapse; font-size:0.875rem;">
+            <table class="w-full text-sm">
                 <thead>
-                    <tr class="text-gray-500" style="text-align:left; border-bottom:1px solid rgba(148,163,184,0.3);">
-                        <th style="width:100%; padding:0.5rem 1rem 0.5rem 0; font-weight:600;">Instruktor</th>
-                        <th style="padding:0.5rem 0 0.5rem 1.5rem; text-align:right; white-space:nowrap; font-weight:600;">Nevyplacené dny</th>
-                        <th style="padding:0.5rem 0 0.5rem 1.5rem; text-align:right; white-space:nowrap; font-weight:600;">Dlužná částka</th>
-                        <th style="padding:0.5rem 0 0.5rem 1.5rem; text-align:right; white-space:nowrap; font-weight:600;">Akce</th>
+                    <tr class="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:border-gray-700">
+                        <th class="w-full py-2 pr-4">Instruktor</th>
+                        <th class="whitespace-nowrap py-2 pl-6 text-right">Nevyplacené dny</th>
+                        <th class="whitespace-nowrap py-2 pl-6 text-right">Dlužná částka</th>
+                        <th class="py-2 pl-6 text-right">Akce</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($users as $u)
-                        <tr style="border-bottom:1px solid rgba(148,163,184,0.15);">
-                            <td style="padding:0.5rem 1rem 0.5rem 0; font-weight:500;">{{ $u->name }}</td>
-                            <td style="padding:0.5rem 0 0.5rem 1.5rem; text-align:right;">{{ $u->unpaid_days_count }}</td>
-                            <td style="padding:0.5rem 0 0.5rem 1.5rem; text-align:right; font-weight:600; white-space:nowrap;">
+                        <tr class="border-b border-gray-100 dark:border-gray-800">
+                            <td class="py-2 pr-4 font-medium">{{ $u->name }}</td>
+                            <td class="py-2 pl-6 text-right">{{ $u->unpaid_days_count }}</td>
+                            <td class="whitespace-nowrap py-2 pl-6 text-right font-semibold">
                                 {{ number_format((float) $u->owed_total, 0, ',', ' ') }} Kč
                             </td>
-                            <td style="padding:0.5rem 0 0.5rem 1.5rem;">
-                                <div style="display:flex; justify-content:flex-end; gap:0.5rem;">
-                                    <x-filament::button size="xs" color="gray"
-                                        wire:click="toggleDetail({{ $u->id }})">
+                            <td class="py-2 pl-6">
+                                <div class="flex items-center justify-end gap-2">
+                                    <x-filament::button size="xs" color="gray" wire:click="toggleDetail({{ $u->id }})">
                                         {{ $selectedUserId === $u->id ? 'Skrýt' : 'Detail' }}
                                     </x-filament::button>
                                     <x-filament::button size="xs" color="success"
@@ -53,35 +52,29 @@
 
                         @if ($selectedUserId === $u->id)
                             <tr class="bg-gray-50 dark:bg-gray-900/40">
-                                <td colspan="4" style="padding:0.75rem 0 0.75rem 1rem;">
-                                    <div class="text-gray-500" style="font-size:0.75rem; font-weight:600; text-transform:uppercase; margin-bottom:0.5rem;">
+                                <td colspan="4" class="px-0 py-3 pl-4">
+                                    <div class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
                                         Rozpis po výletech
                                     </div>
-                                    <table style="width:100%; border-collapse:collapse; font-size:0.875rem;">
-                                        <tbody>
-                                            @foreach ($this->userTrips($u->id) as $trip)
-                                                <tr style="border-bottom:1px solid rgba(148,163,184,0.15);">
-                                                    <td style="width:100%; padding:0.25rem 1rem 0.25rem 0;">{{ $trip->name }}</td>
-                                                    <td style="padding:0.25rem 0 0.25rem 1.5rem; text-align:right; white-space:nowrap;" class="text-gray-500">
-                                                        {{ \Illuminate\Support\Carbon::parse($trip->date_from)->format('d.m.Y') }}
-                                                    </td>
-                                                    <td style="padding:0.25rem 0 0.25rem 1.5rem; text-align:right; white-space:nowrap;" class="text-gray-500">
-                                                        {{ $trip->days }} dní
-                                                    </td>
-                                                    <td style="padding:0.25rem 0 0.25rem 1.5rem; text-align:right; white-space:nowrap; font-weight:600;">
-                                                        {{ number_format((float) $trip->reward, 0, ',', ' ') }} Kč
-                                                    </td>
-                                                    <td style="padding:0.25rem 0 0.25rem 1.5rem; text-align:right;">
-                                                        <x-filament::button size="xs" color="success"
-                                                            wire:click="payTrip({{ $u->id }}, {{ $trip->trip_id }})"
-                                                            wire:confirm="Vyplatit odměnu za výlet „{{ $trip->name }}“?">
-                                                            Zaplatit
-                                                        </x-filament::button>
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
+                                    <div class="space-y-1">
+                                        @foreach ($this->userTrips($u->id) as $trip)
+                                            <div class="flex items-center gap-4 text-sm">
+                                                <span class="min-w-0 flex-1 truncate">{{ $trip->name }}</span>
+                                                <span class="w-24 whitespace-nowrap text-right text-gray-500">
+                                                    {{ \Illuminate\Support\Carbon::parse($trip->date_from)->format('d.m.Y') }}
+                                                </span>
+                                                <span class="w-16 whitespace-nowrap text-right text-gray-500">{{ $trip->days }} dní</span>
+                                                <span class="w-24 whitespace-nowrap text-right font-semibold">
+                                                    {{ number_format((float) $trip->reward, 0, ',', ' ') }} Kč
+                                                </span>
+                                                <x-filament::button size="xs" color="success"
+                                                    wire:click="payTrip({{ $u->id }}, {{ $trip->trip_id }})"
+                                                    wire:confirm="Vyplatit odměnu za výlet „{{ $trip->name }}“?">
+                                                    Zaplatit
+                                                </x-filament::button>
+                                            </div>
+                                        @endforeach
+                                    </div>
                                 </td>
                             </tr>
                         @endif
