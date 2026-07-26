@@ -4,6 +4,8 @@ namespace App\Notifications;
 
 use App\Models\EmailTemplate;
 use App\Models\Trip;
+use App\Support\TripIcs;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Number;
 
 // Confirmation email to the customer – sent automatically when an inquiry is converted to a trip.
@@ -16,6 +18,18 @@ class CustomerInquiryConfirmedNotification extends TemplatedNotification
     protected function templateKey(): string
     {
         return EmailTemplate::KEY_CONFIRMATION;
+    }
+
+    public function toMail(object $notifiable): MailMessage
+    {
+        $mail = parent::toMail($notifiable);
+
+        // Attach the trip as a calendar event so the customer can add it to their calendar.
+        if ($ics = TripIcs::for($this->trip)) {
+            $mail->attachData($ics, 'rafting-morava.ics', ['mime' => 'text/calendar; charset=UTF-8']);
+        }
+
+        return $mail;
     }
 
     protected function macroData(object $notifiable): array
