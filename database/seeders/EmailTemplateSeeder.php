@@ -21,7 +21,7 @@ class EmailTemplateSeeder extends Seeder
 Dobrý den {{client_name}},
 
 děkujeme za Váš zájem. Potvrzujeme termín výletu „{{program_name}}“
-v termínu {{date_from}} – {{date_to}}, sraz a start v {{start_time}}.
+v termínu {{date_from}} – {{date_to}}, start v {{start_time}}.
 
 Předběžná cena celkem: {{total_price}}.
 
