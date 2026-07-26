@@ -3,12 +3,15 @@
 namespace App\Filament\Resources\Trips\Tables;
 
 use App\Models\Trip;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TripsTable
 {
@@ -43,7 +46,16 @@ class TripsTable
                 SelectFilter::make('status')->label('Stav')->options(Trip::STATUSES),
                 SelectFilter::make('trip_program_id')->label('Program')->relationship('program', 'name')->searchable()->preload(),
             ])
+            ->headerActions([
+                self::exportSettlementAction(),
+            ])
             ->recordActions([
+                Action::make('sheet')
+                    ->label('Tisk rozpisu')
+                    ->icon('heroicon-o-printer')
+                    ->color('gray')
+                    ->url(fn (Trip $record) => route('trip.sheet', $record))
+                    ->openUrlInNewTab(),
                 EditAction::make(),
             ])
             ->toolbarActions([
@@ -51,5 +63,48 @@ class TripsTable
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    /** Header action: download an accounting CSV of trip settlements, optionally filtered by date. */
+    private static function exportSettlementAction(): Action
+    {
+        return Action::make('exportSettlement')
+            ->label('Export vyúčtování (CSV)')
+            ->icon('heroicon-o-arrow-down-tray')
+            ->color('gray')
+            ->schema([
+                DatePicker::make('from')->label('Termín od')->native(false)->displayFormat('d.m.Y'),
+                DatePicker::make('to')->label('Termín do')->native(false)->displayFormat('d.m.Y'),
+            ])
+            ->action(function (array $data): StreamedResponse {
+                return response()->streamDownload(function () use ($data) {
+                    $out = fopen('php://output', 'w');
+                    fprintf($out, "\xEF\xBB\xBF"); // UTF-8 BOM so Excel reads Czech characters
+                    fputcsv($out, ['Výlet', 'Termín od', 'Termín do', 'Typ', 'Stav', 'Platících (skut.)', 'Doprovod (skut.)', 'Zaplaceno (Kč)', 'Způsob úhrady', 'Číslo dokladu', 'Datum úhrady']);
+
+                    Trip::query()
+                        ->when($data['from'] ?? null, fn ($q, $v) => $q->whereDate('date_from', '>=', $v))
+                        ->when($data['to'] ?? null, fn ($q, $v) => $q->whereDate('date_from', '<=', $v))
+                        ->orderBy('date_from')
+                        ->get()
+                        ->each(function (Trip $trip) use ($out) {
+                            fputcsv($out, [
+                                $trip->name,
+                                $trip->date_from?->format('d.m.Y'),
+                                $trip->date_to?->format('d.m.Y'),
+                                Trip::TYPES[$trip->type] ?? $trip->type,
+                                Trip::STATUSES[$trip->status] ?? $trip->status,
+                                $trip->actual_paying_count,
+                                $trip->actual_escort_count,
+                                $trip->amount_paid,
+                                Trip::PAYMENT_METHODS[$trip->payment_method] ?? $trip->payment_method,
+                                $trip->document_number,
+                                $trip->payment_date?->format('d.m.Y'),
+                            ]);
+                        });
+
+                    fclose($out);
+                }, 'vyuctovani-' . now()->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+            });
     }
 }
