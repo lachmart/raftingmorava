@@ -1,21 +1,21 @@
-kategorie,nazev,cena_za_osobu,odmena_instruktora,pocet_dni,doba_trvani_min,nastupni_misto
-Skolni vylety,Olomoucí po vodě,190,400,1,90,Mlýnský Potok
-Skolni vylety,Z Chomoutova do Olomouce,290,600,1,150,Mlýnský Potok
-Skolni vylety,Z Horky do Olomouce,390,750,1,210,Mlýnský Potok
-Skolni vylety,1 denní Nebe a Voda,620,,1,300,Mlýnský Potok
-Skolni vylety,Ze Střeně nebo Hynkova do Olomouce,500,1000,1,360,Mlýnský Potok
-Skolni vylety,Moravičany-Litovel,550,900,1,300,Morava
-Skolni vylety,2 denní Nebe a Voda,1090,1800,2,,Morava
-Skolni vylety,"2 denní, Mohelnice – Nové mlýny – Litovel",1190,1800,2,,Morava
-Skolni vylety,"3 denní, Postřelmov – Vila Háj – Stodola – Litovel",1990,2700,3,,Morava
-Vylety v CR,Pod hradbami Olomouce,250,400,1,60,Mlýnský Potok
-Vylety v CR,Bobří řeka,390,600,1,150,Mlýnský Potok
-Vylety v CR,Hanácké meandry,490,750,1,210,Mlýnský Potok
-Vylety v CR,Hanáckou peřejí,650,1000,1,360,Morava
-Vylety v CR,Moravské proudy,750,900,1,300,Morava
-Vylety v CR,Moravice,850,,1,,Moravice
-Vylety v CR,Výlet na packraftu,890,,1,180,Mlýnský Potok
-Zahranicni vylety,"Salza, rakouská perla",4699,,3,,Salza
-Zahranicni vylety,"Wild Rafting: Möll, Isel",7999,,4,,Möll
-Zahranicni vylety,Salza s výletem do Mariazellu,5699,,4,,Salza
-Zahranicni vylety,Soča – smaragdová řeka,6990,,4,,Soča
+kategorie,nazev,cena_za_osobu,odmena_instruktora,pocet_dni,doba_trvani_min,nastupni_mista
+Skolni vylety,Olomoucí po vodě,190,400,1,90,kemp Krásná Morava
+Skolni vylety,Z Chomoutova do Olomouce,290,600,1,150,Chomoutov
+Skolni vylety,Z Horky do Olomouce,390,750,1,210,Horka nad Moravou
+Skolni vylety,1 denní Nebe a Voda,620,,1,300,Chomoutov
+Skolni vylety,Ze Střeně nebo Hynkova do Olomouce,500,1000,1,360,Střeň
+Skolni vylety,Moravičany-Litovel,550,900,1,300,Moravičany
+Skolni vylety,2 denní Nebe a Voda,1090,1800,2,,Střeň
+Skolni vylety,"2 denní, Mohelnice – Nové mlýny – Litovel",1190,1800,2,,Mohelnice|Nové Mlýny
+Skolni vylety,"3 denní, Postřelmov – Vila Háj – Stodola – Litovel",1990,2700,3,,Postřelmov|Vila Háj|Stodola
+Vylety v CR,Pod hradbami Olomouce,250,400,1,60,kemp Krásná Morava
+Vylety v CR,Bobří řeka,390,600,1,150,Chomoutov
+Vylety v CR,Hanácké meandry,490,750,1,210,Horka nad Moravou
+Vylety v CR,Hanáckou peřejí,650,1000,1,360,Střeň
+Vylety v CR,Moravské proudy,750,900,1,300,Moravičany
+Vylety v CR,Moravice,850,,1,,
+Vylety v CR,Výlet na packraftu,890,,1,180,Horka nad Moravou
+Zahranicni vylety,"Salza, rakouská perla",4699,,3,,
+Zahranicni vylety,"Wild Rafting: Möll, Isel",7999,,4,,
+Zahranicni vylety,Salza s výletem do Mariazellu,5699,,4,,
+Zahranicni vylety,Soča – smaragdová řeka,6990,,4,,

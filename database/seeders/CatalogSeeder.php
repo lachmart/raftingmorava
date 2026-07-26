@@ -55,11 +55,12 @@ class CatalogSeeder extends Seeder
                 ],
             );
 
-            // Day 1 boarding point (from the website's "Lokalita"). Create the location if missing.
-            $boarding = trim($row['nastupni_misto'] ?? '');
-            if ($boarding !== '') {
+            // Per-day boarding points (pipe-separated: day1|day2|…), from the trip's real start points.
+            // Create the location if it does not exist yet.
+            $boardings = array_values(array_filter(array_map('trim', explode('|', $row['nastupni_mista'] ?? ''))));
+            foreach ($boardings as $i => $boarding) {
                 $location = Location::firstOrCreate(['name' => $boarding], ['active' => true]);
-                $program->programDays()->updateOrCreate(['order' => 1], ['location_id' => $location->id]);
+                $program->programDays()->updateOrCreate(['order' => $i + 1], ['location_id' => $location->id]);
             }
         }
 
