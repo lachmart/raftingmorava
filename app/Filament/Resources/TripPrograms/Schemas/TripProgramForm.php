@@ -34,6 +34,9 @@ class TripProgramForm
                             ->required()
                             ->numeric()
                             ->default(0.0),
+                        TextInput::make('meeting_offset_minutes')->label('Sraz před startem (min)')
+                            ->numeric()->minValue(0)->default(50)->required()
+                            ->helperText('Sraz výletu se předvyplní jako start minus tento počet minut.'),
                         Textarea::make('description')->label('Popis')
                             ->columnSpanFull(),
                     ]),

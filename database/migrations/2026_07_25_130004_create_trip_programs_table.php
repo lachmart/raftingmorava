@@ -17,6 +17,8 @@ return new class extends Migration
             $table->enum('category', ['school', 'domestic', 'foreign'])->default('domestic');
             $table->decimal('price_per_person', 10, 2)->nullable();
             $table->decimal('instructor_reward', 10, 2)->nullable();
+            // How many minutes before the start the meeting (sraz) is – used to auto-fill the trip's sraz.
+            $table->unsignedSmallInteger('meeting_offset_minutes')->default(50);
             $table->text('description')->nullable();
             $table->boolean('active')->default(true);
             $table->timestamps();

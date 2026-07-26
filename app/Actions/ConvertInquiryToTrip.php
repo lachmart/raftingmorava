@@ -52,14 +52,23 @@ class ConvertInquiryToTrip
                 ? $program->programDays()->pluck('location_id', 'order')
                 : collect();
 
-            // Generate the trip days. Day 1 gets the confirmed start time (sent in the email).
+            // Day 1 gets the confirmed start time; sraz is pre-filled as start minus the program offset.
+            $startTime = $data['start_time'] ?? null;
+            $meetingTime = null;
+            if ($startTime) {
+                $offset = $program?->meeting_offset_minutes ?? 50;
+                $meetingTime = Carbon::parse($startTime)->subMinutes($offset)->format('H:i');
+            }
+
+            // Generate the trip days.
             for ($order = 1; $order <= $dayCount; $order++) {
                 TripDay::create([
                     'trip_id' => $trip->id,
                     'date' => $from->copy()->addDays($order - 1)->toDateString(),
                     'order' => $order,
                     'location_id' => $dayLocations[$order] ?? null,
-                    'start_time' => $order === 1 ? ($data['start_time'] ?? null) : null,
+                    'start_time' => $order === 1 ? $startTime : null,
+                    'meeting_time' => $order === 1 ? $meetingTime : null,
                 ]);
             }
 
