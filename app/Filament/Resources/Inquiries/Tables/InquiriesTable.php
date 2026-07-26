@@ -11,12 +11,16 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Carbon;
 
 class InquiriesTable
 {
@@ -61,9 +65,22 @@ class InquiriesTable
                             ->options(fn () => TripProgram::orderBy('name')->pluck('name', 'id'))
                             ->searchable()
                             ->default(fn (Inquiry $record) => $record->program_id)
+                            ->live()
                             ->helperText('Předvyplněno dle shody názvu; admin může upravit.'),
-                        DatePicker::make('date_from')->label('Termín od')->required()->native(false)->displayFormat('d.m.Y'),
-                        DatePicker::make('date_to')->label('Termín do')->required()->native(false)->displayFormat('d.m.Y'),
+                        DatePicker::make('date_from')->label('Termín od (potvrdit)')->required()->native(false)->displayFormat('d.m.Y')->live(),
+                        TimePicker::make('start_time')->label('Čas startu')->seconds(false)->required()
+                            ->helperText('Odesílá se zákazníkovi v potvrzovacím e-mailu.'),
+                        // End date is derived from the program's day template (number of days), not entered.
+                        Placeholder::make('computed_date_to')->label('Termín do (dle šablony)')
+                            ->content(function (Get $get): string {
+                                $from = $get('date_from');
+                                if (! $from) {
+                                    return '— nejdřív vyber termín od —';
+                                }
+                                $days = self::templateDays($get('trip_program_id'));
+
+                                return Carbon::parse($from)->addDays($days - 1)->format('d.m.Y') . ' (' . $days . ' ' . ($days === 1 ? 'den' : 'dní') . ')';
+                            }),
                         TextInput::make('planned_paying_count')->label('Počet platících')->numeric()->minValue(1)
                             ->default(fn (Inquiry $record) => $record->people_count),
                     ])
@@ -83,5 +100,13 @@ class InquiriesTable
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    /** Trip length in days = number of days in the program's location template (min 1). */
+    private static function templateDays($programId): int
+    {
+        $count = $programId ? (TripProgram::find($programId)?->programDays()->count() ?? 0) : 0;
+
+        return max(1, $count);
     }
 }

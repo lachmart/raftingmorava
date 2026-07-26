@@ -29,6 +29,7 @@ class EmailTemplate extends Model
                 'program_name' => 'Název programu / výletu',
                 'date_from' => 'Termín od',
                 'date_to' => 'Termín do',
+                'start_time' => 'Čas startu',
                 'total_price' => 'Cena celkem',
                 'company_phone' => 'Telefon firmy',
                 'company_email' => 'E-mail firmy',

@@ -29,11 +29,16 @@ class CustomerInquiryConfirmedNotification extends TemplatedNotification
         }
         $totalPrice = $price !== null ? Number::currency((float) $price, 'CZK', 'cs') : '';
 
+        // Start time = start_time of the first trip day (set at conversion).
+        $startTime = $trip->days()->orderBy('order')->value('start_time');
+        $startTime = $startTime ? substr((string) $startTime, 0, 5) : '';
+
         return [
             'client_name' => $trip->client_name ?? '',
             'program_name' => $trip->program?->name ?? $trip->name,
             'date_from' => $trip->date_from?->format('d.m.Y') ?? '',
             'date_to' => $trip->date_to?->format('d.m.Y') ?? '',
+            'start_time' => $startTime,
             'total_price' => $totalPrice,
             'company_phone' => config('company.phone'),
             'company_email' => config('company.email'),
