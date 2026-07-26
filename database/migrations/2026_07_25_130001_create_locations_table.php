@@ -12,10 +12,6 @@ return new class extends Migration
         Schema::create('locations', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            // confirmed = verified place, optional = tentative / to be verified
-            $table->enum('certainty', ['confirmed', 'optional'])->default('confirmed');
-            $table->string('address')->nullable();
-            $table->text('note')->nullable();
             $table->boolean('active')->default(true);
             $table->timestamps();
         });

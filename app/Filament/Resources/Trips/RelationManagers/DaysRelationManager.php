@@ -41,7 +41,7 @@ class DaysRelationManager extends RelationManager
                         DatePicker::make('date')->label('Datum')->required()->native(false)->displayFormat('d.m.Y'),
                         TextInput::make('order')->label('Pořadí dne')->numeric()->default(1)->minValue(1)->required(),
                         Select::make('location_id')->label('Lokace (místo srazu)')
-                            ->relationship('location', 'name')->searchable()->preload()
+                            ->relationship('location', 'name', fn ($query) => $query->where('active', true))->searchable()->preload()
                             ->createOptionForm([TextInput::make('name')->label('Název lokace')->required()]),
 
                         TimePicker::make('meeting_time')->label('Čas srazu')->seconds(false),

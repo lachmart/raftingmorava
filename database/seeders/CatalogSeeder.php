@@ -9,11 +9,11 @@ use App\Models\Vehicle;
 use Illuminate\Database\Seeder;
 
 /**
- * Catalogs from real data: programs (price lists) and rental equipment are loaded from CSV files
- * in database/seeders/data/. Locations and vehicles are samples (not supplied – see README).
+ * Catalogs from real data: programs (price lists), rental equipment and locations are loaded from
+ * CSV files in database/seeders/data/. Vehicles are samples (not supplied – see README).
  *
  * NOTE: the CSV files keep Czech headers/values (user-supplied data), so $row['...'] keys and the
- * CSV category/certainty values below are Czech on purpose. They are mapped to English enum values.
+ * CSV category values below are Czech on purpose. They are mapped to English enum values.
  */
 class CatalogSeeder extends Seeder
 {
@@ -79,7 +79,7 @@ class CatalogSeeder extends Seeder
 
     private function seedLocationsAndVehicles(): void
     {
-        // Real locations from CSV (nazev, jistota, poznamka).
+        // Real locations from CSV – only the name is used; other CSV columns are ignored.
         foreach (CsvReader::read(database_path('seeders/data/seed_lokace.csv')) as $row) {
             $name = trim($row['nazev'] ?? '');
             if ($name === '') {
@@ -88,11 +88,7 @@ class CatalogSeeder extends Seeder
 
             Location::updateOrCreate(
                 ['name' => $name],
-                [
-                    'certainty' => trim($row['jistota'] ?? '') === 'doplnkove' ? 'optional' : 'confirmed',
-                    'note' => trim($row['poznamka'] ?? '') ?: null,
-                    'active' => true,
-                ],
+                ['active' => true],
             );
         }
 

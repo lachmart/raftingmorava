@@ -192,7 +192,7 @@ class Planning extends Page implements HasTable
                         TimePicker::make('end_time')->label('Čas konce')->seconds(false)
                             ->live()->afterStateUpdated(fn (Get $get) => $this->saveDetails($get)),
                         Select::make('location_id')->label('Lokace (místo srazu)')
-                            ->options(fn () => Location::orderBy('name')->pluck('name', 'id'))
+                            ->options(fn () => Location::where('active', true)->orderBy('name')->pluck('name', 'id'))
                             ->searchable()->preload()
                             ->createOptionForm([TextInput::make('name')->label('Název lokace')->required()])
                             ->createOptionUsing(fn (array $data) => Location::create($data)->id)
