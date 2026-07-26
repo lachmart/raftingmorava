@@ -41,10 +41,11 @@ class TripProgramForm
                             ->columnSpanFull(),
                     ]),
 
-                // Day-by-day location template for multi-day routes. Order = trip day order; when an
-                // inquiry is converted to a trip, each generated day gets the location for its order.
-                Section::make('Lokace po dnech (vícedenní trasy)')
-                    ->description('Pořadí = pořadí dne výletu. Při vytvoření výletu z poptávky se lokace přiřadí na jednotlivé dny podle pořadí. Nech prázdné u jednodenních programů.')
+                // Day-by-day location template. Order = trip day order; when an inquiry is converted to
+                // a trip, each generated day gets the location for its order and the number of rows sets
+                // the trip length. Even a single-day program should have one row = the start location.
+                Section::make('Lokace po dnech')
+                    ->description('Přidej jeden řádek na každý den výletu – i u jednodenního výletu (lokace startu). Pořadí = pořadí dne. Při vytvoření výletu z poptávky se lokace přiřadí na dny podle pořadí a délka výletu se určí podle počtu dnů.')
                     ->schema([
                         Repeater::make('programDays')
                             ->hiddenLabel()
