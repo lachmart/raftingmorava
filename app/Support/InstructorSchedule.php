@@ -48,11 +48,16 @@ class InstructorSchedule
             $date = $day->date?->format('d.m.Y');
             $name = $day->trip?->name;
             $type = TripDayAssignment::TYPES[$a->type] ?? $a->type;
-            $time = $day->meeting_time ? ' sraz ' . substr((string) $day->meeting_time, 0, 5) : '';
+            // Instructors get both sraz (when to meet) and start (when the trip begins).
+            $times = collect([
+                $day->meeting_time ? 'sraz ' . substr((string) $day->meeting_time, 0, 5) : null,
+                $day->start_time ? 'start ' . substr((string) $day->start_time, 0, 5) : null,
+            ])->filter()->implode(', ');
+            $times = $times !== '' ? ' ' . $times : '';
             $location = $day->location?->name ? ' – ' . $day->location->name : '';
             $vehicle = $day->vehicles->isNotEmpty() ? ' [vozidla: ' . $day->vehicles->pluck('name')->join(', ') . ']' : '';
 
-            return "• {$date}{$time} – {$name} ({$type}){$location}{$vehicle}";
+            return "• {$date}{$times} – {$name} ({$type}){$location}{$vehicle}";
         })->implode("\n");
     }
 }
