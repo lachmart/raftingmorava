@@ -28,6 +28,12 @@ class TripProgram extends Model
         return $this->hasMany(Trip::class);
     }
 
+    /** Day-by-day location template for multi-day routes (order → location). */
+    public function programDays(): HasMany
+    {
+        return $this->hasMany(TripProgramDay::class)->orderBy('order');
+    }
+
     public function getCategoryLabelAttribute(): string
     {
         return self::CATEGORIES[$this->category] ?? $this->category;

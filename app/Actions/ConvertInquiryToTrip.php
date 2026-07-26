@@ -41,14 +41,21 @@ class ConvertInquiryToTrip
                 'inquiry_id' => $inquiry->id,
             ]);
 
+            // Location template from the program (order → location_id); extra days stay without a location.
+            $dayLocations = $trip->program
+                ? $trip->program->programDays()->pluck('location_id', 'order')
+                : collect();
+
             // Generate a day for every calendar day in the range.
             $order = 1;
             for ($day = $from->copy(); $day->lte($to); $day->addDay()) {
                 TripDay::create([
                     'trip_id' => $trip->id,
                     'date' => $day->toDateString(),
-                    'order' => $order++,
+                    'order' => $order,
+                    'location_id' => $dayLocations[$order] ?? null,
                 ]);
+                $order++;
             }
 
             // Carry the inquiry note over as the first post in the trip's note thread.

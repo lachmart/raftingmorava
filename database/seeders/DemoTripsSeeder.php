@@ -106,6 +106,30 @@ class DemoTripsSeeder extends Seeder
             $trip3->equipmentItems()->updateOrCreate(['equipment_id' => $vest->id], ['quantity' => 6]);
         }
         $trip3->refresh()->recalculateRentalPrice();
+
+        // --- Past completed trip (last week) with UNPAID rewards → shows up in Payments ---
+        $past = Carbon::today()->subDays(7);
+        $trip4 = Trip::updateOrCreate(
+            ['name' => 'UKÁZKA – Proběhlý výlet (demo)'],
+            [
+                'trip_program_id' => $program1?->id,
+                'type' => 'guided',
+                'client_name' => 'ZŠ Minulá',
+                'client_email' => 'minula@example.cz',
+                'date_from' => $past,
+                'date_to' => $past,
+                'planned_paying_count' => 20,
+                'instructor_reward' => 500,
+                'status' => 'completed',
+            ],
+        );
+        $day4 = TripDay::updateOrCreate(
+            ['trip_id' => $trip4->id, 'order' => 1],
+            ['date' => $past, 'location_id' => $location?->id,
+                'meeting_time' => '08:00', 'start_time' => '09:00', 'end_time' => '16:00'],
+        );
+        $day4->vehicles()->sync($vehicle ? [$vehicle->id] : []);
+        $this->assign($day4, $instructors->take(2), $drivers->first());
     }
 
     private function assign(TripDay $day, $instructors, ?User $driver): void
