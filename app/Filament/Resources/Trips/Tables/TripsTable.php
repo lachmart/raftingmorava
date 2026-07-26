@@ -18,6 +18,7 @@ class TripsTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->with('firstDay'))
             ->columns([
                 TextColumn::make('name')->label('Název')->searchable()->sortable()->wrap(),
                 TextColumn::make('type')->label('Typ')->badge()
@@ -25,7 +26,12 @@ class TripsTable
                     ->color(fn (string $state) => $state === 'rental' ? 'warning' : 'info'),
                 TextColumn::make('program.name')->label('Program')->placeholder('—')->toggleable()->wrap(),
                 TextColumn::make('client_name')->label('Klient')->searchable()->placeholder('—'),
-                TextColumn::make('date_from')->label('Od')->date('d.m.Y')->sortable(),
+                TextColumn::make('date_from')->label('Od')->date('d.m.Y')->sortable()
+                    ->description(function (Trip $record) {
+                        $time = $record->firstDay?->start_time ?: $record->firstDay?->meeting_time;
+
+                        return $time ? ($record->firstDay?->start_time ? 'start ' : 'sraz ') . substr((string) $time, 0, 5) : null;
+                    }),
                 TextColumn::make('date_to')->label('Do')->date('d.m.Y')->sortable(),
                 TextColumn::make('planned_paying_count')->label('Platících')->numeric()->sortable()
                     ->formatStateUsing(fn ($state, Trip $record) => $state . ($record->planned_escort_count ? ' + ' . $record->planned_escort_count . ' dopr.' : '')),

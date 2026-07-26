@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -106,6 +107,12 @@ class Trip extends Model
     public function days(): HasMany
     {
         return $this->hasMany(TripDay::class)->orderBy('order');
+    }
+
+    /** The first day of the trip (order 1) – used to show the trip's start time in listings. */
+    public function firstDay(): HasOne
+    {
+        return $this->hasOne(TripDay::class)->orderBy('order');
     }
 
     public function equipment(): BelongsToMany

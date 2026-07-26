@@ -27,6 +27,7 @@ class UpcomingTrips extends BaseWidget
             ->heading('Nejbližší nedokončené výlety')
             ->query(
                 Trip::query()
+                    ->with('firstDay')
                     ->where('status', 'planned')
                     ->whereDate('date_to', '>=', Carbon::today()->toDateString())
                     ->orderBy('date_from')
@@ -35,9 +36,18 @@ class UpcomingTrips extends BaseWidget
             ->defaultPaginationPageOption(5)
             ->columns([
                 TextColumn::make('date_from')->label('Termín')->date('d.m.Y')->sortable()
-                    ->description(fn (Trip $record) => $record->date_to && $record->date_to->ne($record->date_from)
-                        ? 'do ' . $record->date_to->format('d.m.Y')
-                        : null),
+                    ->description(function (Trip $record) {
+                        $parts = [];
+                        $time = $record->firstDay?->start_time ?: $record->firstDay?->meeting_time;
+                        if ($time) {
+                            $parts[] = ($record->firstDay?->start_time ? 'start ' : 'sraz ') . substr((string) $time, 0, 5);
+                        }
+                        if ($record->date_to && $record->date_to->ne($record->date_from)) {
+                            $parts[] = 'do ' . $record->date_to->format('d.m.Y');
+                        }
+
+                        return $parts ? implode(' · ', $parts) : null;
+                    }),
                 TextColumn::make('name')->label('Výlet')->wrap()->searchable(),
                 TextColumn::make('client_name')->label('Klient')->placeholder('—')->searchable(),
                 TextColumn::make('type')->label('Typ')->badge()
