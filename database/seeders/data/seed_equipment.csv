@@ -1,15 +1,19 @@
 nazev,cena_za_den,poznamka
-Raftový komplet PULSAR,1500,"raft, 6x pádlo, 6x vesta, pumpa, vak"
-Raftový komplet COLORADO,1000,"raft, 6x pádlo, 6x vesta, pumpa, vak"
-Kanoe komplet BARAKA/YUKON,500,"kánoe, 2x pádlo, 2x vesta, pumpa, vak"
+Raftový komplet,1000,"raft, pádla, vesty, pumpa, vak"
+Kanoe YUKON komplet,500,"kánoe, pádla, vesty, pumpa, vak"
+Kanoe YUKON 3místná komplet,500,"kánoe, pádla, vesty, pumpa, vak"
+Kanoe BARAKA komplet,500,"kánoe, pádla, vesty, pumpa, vak"
+Raft Colorado,800,samotný raft
+Nafukovací raft Pulsar,1300,samotný raft
+Paddleboard,400,"paddleboard, pádlo, pumpa, vak"
 Packraft komplet,400,"packraft, pádlo, vesta, pumpa, vak"
-Paddleboard komplet,400,"paddleboard, pádlo, pumpa, vak"
-Vesta,50,
-Pádlo,50,
-Neopren,100,
+Pádlo,40,
+Plovací vesta,50,
+Neopren (long john),99,
 Vodácká bunda,50,
-Neoprénové boty,100,
-Lodní vak,25,
-Obal na mobil,25,
-Pumpa,50,
-Házečka,50,
+Neoprénové boty,60,
+Vodácká helma,40,
+Lodní vak na suché oblečení,40,
+Nepromokavý obal na mobil,30,
+Házecí pytlík,40,
+Pumpa na rafty a kánoe,30,

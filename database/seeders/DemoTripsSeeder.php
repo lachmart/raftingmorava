@@ -102,7 +102,7 @@ class DemoTripsSeeder extends Seeder
         if ($raft = Equipment::where('name', 'like', '%COLORADO%')->first()) {
             $trip3->equipmentItems()->updateOrCreate(['equipment_id' => $raft->id], ['quantity' => 1]);
         }
-        if ($vest = Equipment::where('name', 'Vesta')->first()) {
+        if ($vest = Equipment::where('name', 'Plovací vesta')->first()) {
             $trip3->equipmentItems()->updateOrCreate(['equipment_id' => $vest->id], ['quantity' => 6]);
         }
         $trip3->refresh()->recalculateRentalPrice();

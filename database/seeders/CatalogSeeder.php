@@ -39,23 +39,35 @@ class CatalogSeeder extends Seeder
                 continue;
             }
 
-            TripProgram::updateOrCreate(
+            $days = self::number($row['pocet_dni'] ?? null);
+            $duration = self::number($row['doba_trvani_min'] ?? null);
+
+            $program = TripProgram::updateOrCreate(
                 ['name' => $name], // exact WP name = key for exact-match inquiry pairing
                 [
                     'category' => self::CATEGORY_MAP[trim($row['kategorie'] ?? '')] ?? 'domestic',
                     'price_per_person' => self::number($row['cena_za_osobu'] ?? null),
                     // Empty reward = "by agreement" (null), not 0.
                     'instructor_reward' => self::number($row['odmena_instruktora'] ?? null),
+                    'number_of_days' => $days ? (int) $days : 1,
+                    'duration_minutes' => $duration ? (int) $duration : null,
                     'active' => true,
                 ],
             );
+
+            // Day 1 boarding point (from the website's "Lokalita"). Create the location if missing.
+            $boarding = trim($row['nastupni_misto'] ?? '');
+            if ($boarding !== '') {
+                $location = Location::firstOrCreate(['name' => $boarding], ['active' => true]);
+                $program->programDays()->updateOrCreate(['order' => 1], ['location_id' => $location->id]);
+            }
         }
 
         // Generic flat rates for multi-day trips without a specific route (see spec 2b.1 / 2e).
         TripProgram::updateOrCreate(['name' => 'Dvoudenní — obecně'],
-            ['category' => 'domestic', 'price_per_person' => null, 'instructor_reward' => 1800, 'active' => true]);
+            ['category' => 'domestic', 'price_per_person' => null, 'instructor_reward' => 1800, 'number_of_days' => 2, 'active' => true]);
         TripProgram::updateOrCreate(['name' => 'Třídenní — obecně'],
-            ['category' => 'domestic', 'price_per_person' => null, 'instructor_reward' => 2700, 'active' => true]);
+            ['category' => 'domestic', 'price_per_person' => null, 'instructor_reward' => 2700, 'number_of_days' => 3, 'active' => true]);
     }
 
     private function seedEquipment(): void
