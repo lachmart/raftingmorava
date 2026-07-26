@@ -1,0 +1,14 @@
+name: raftingmorava
+type: laravel
+docroot: public
+php_version: "8.3"
+webserver_type: nginx-fpm
+xdebug_enabled: false
+composer_version: "2"
+web_environment: []
+nodejs_version: "20"
+database:
+  type: mysql
+  version: "8.0"
+# Rafting Morava – interní systém plánování výletů (Laravel + Filament)
+# Po `ddev start` viz README k dalším krokům (composer install, migrace, seed).
