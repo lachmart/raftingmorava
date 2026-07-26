@@ -85,8 +85,9 @@ class Trip extends Model
             ? $this->date_from->diffInDays($this->date_to) + 1
             : 1;
 
+        // Per-item price override (price_per_unit) wins; empty falls back to the current catalog price.
         $sum = $this->equipmentItems()->with('equipment')->get()
-            ->sum(fn (TripEquipment $item) => (float) ($item->equipment?->price_per_day ?? 0) * $item->quantity);
+            ->sum(fn (TripEquipment $item) => (float) ($item->price_per_unit ?? $item->equipment?->price_per_day ?? 0) * $item->quantity);
 
         $this->total_price = $sum * $days;
         $this->saveQuietly();
