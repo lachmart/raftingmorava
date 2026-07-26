@@ -1,7 +1,4 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
-Route::get('/', function () {
-    return view('welcome');
-});
+// The application is served entirely by the Filament panel at the root path (see AdminPanelProvider).
+// No other web routes are needed here.

@@ -23,7 +23,7 @@ class AdminPanelProvider extends PanelProvider
         return $panel
             ->default()
             ->id('admin')
-            ->path('admin')
+            ->path('')
             ->login()
             ->profile() // own profile (name, email, password) – each user edits their own
             // Colors matched to the raftingmorava.cz website (water blue #09afe6 + green accent).
