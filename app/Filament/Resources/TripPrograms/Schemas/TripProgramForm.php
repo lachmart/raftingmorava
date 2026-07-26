@@ -41,11 +41,11 @@ class TripProgramForm
                             ->columnSpanFull(),
                     ]),
 
-                // Day-by-day location template. Order = trip day order; when an inquiry is converted to
-                // a trip, each generated day gets the location for its order and the number of rows sets
-                // the trip length. Even a single-day program should have one row = the start location.
-                Section::make('Lokace po dnech')
-                    ->description('Přidej jeden řádek na každý den výletu – i u jednodenního výletu (lokace startu). Pořadí = pořadí dne. Při vytvoření výletu z poptávky se lokace přiřadí na dny podle pořadí a délka výletu se určí podle počtu dnů.')
+                // Day-by-day boarding-point template. Order = trip day order; when an inquiry is converted
+                // to a trip, each day gets the boarding point for its order and the number of rows sets the
+                // trip length. Even a single-day program should have one row = the start boarding point.
+                Section::make('Nástupní místa po dnech')
+                    ->description('Ke každému dnu výletu přiřaď nástupní místo, odkud se ten den vyráží. Jeden řádek = jeden den; i jednodenní výlet má jeden řádek (nástupní místo startu). Počet řádků zároveň určuje délku výletu a při převodu poptávky se místa přiřadí dnům podle pořadí.')
                     ->schema([
                         Repeater::make('programDays')
                             ->hiddenLabel()
@@ -56,10 +56,10 @@ class TripProgramForm
                                 ? Location::find($state['location_id'])?->name
                                 : null)
                             ->schema([
-                                Select::make('location_id')->label('Lokace')
+                                Select::make('location_id')->label('Nástupní místo')
                                     ->relationship('location', 'name', fn ($query) => $query->where('active', true))
                                     ->searchable()->preload()->required()
-                                    ->createOptionForm([TextInput::make('name')->label('Název lokace')->required()]),
+                                    ->createOptionForm([TextInput::make('name')->label('Název místa')->required()]),
                             ])
                             ->addActionLabel('Přidat den')
                             ->defaultItems(0),
