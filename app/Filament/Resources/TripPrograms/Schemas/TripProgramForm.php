@@ -45,7 +45,7 @@ class TripProgramForm
                 // to a trip, each day gets the boarding point for its order and the number of rows sets the
                 // trip length. Even a single-day program should have one row = the start boarding point.
                 Section::make('Nástupní místa po dnech')
-                    ->description('Ke každému dnu výletu přiřaď nástupní místo, odkud se ten den vyráží. Jeden řádek = jeden den; i jednodenní výlet má jeden řádek (nástupní místo startu). Počet řádků zároveň určuje délku výletu a při převodu poptávky se místa přiřadí dnům podle pořadí.')
+                    ->description('Ke každému dnu výletu přiřaď nástupní místo, odkud se ten den vyráží. Počet řádků zároveň určuje délku výletu a při převodu poptávky se místa přiřadí dnům podle pořadí.')
                     ->schema([
                         Repeater::make('programDays')
                             ->hiddenLabel()
