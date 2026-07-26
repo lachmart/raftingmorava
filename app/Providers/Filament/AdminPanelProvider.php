@@ -34,7 +34,7 @@ class AdminPanelProvider extends PanelProvider
                 'gray' => Color::Slate,
             ])
             ->brandName('Rafting Morava')
-            ->favicon(asset('favicon.svg'))
+            ->favicon(asset('favicon.png'))
             // The left menu can collapse on desktop into a narrow icon strip (less space).
             ->sidebarCollapsibleOnDesktop()
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
