@@ -115,6 +115,7 @@ class Planning extends Page implements HasTable
                 TextColumn::make('trip.type')->label('Typ')->badge()
                     ->formatStateUsing(fn (string $state) => $state === 'rental' ? 'Půjčovna' : 'Výlet')
                     ->color(fn (string $state) => $state === 'rental' ? 'warning' : 'info'),
+                TextColumn::make('location.name')->label('Nástupní místo')->wrap()->placeholder('—'),
                 TextColumn::make('instructors')->label('Instruktoři')
                     ->state(fn (TripDay $record) => $record->assignments->where('type', 'instructor')->map(fn ($a) => $a->user?->name)->filter()->values()->all())
                     ->listWithLineBreaks()->placeholder('—'),
