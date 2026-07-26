@@ -8,12 +8,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 // Program catalog (price lists). `name` = the exact WP trip page title (exact-match inquiry pairing).
 class TripProgram extends Model
 {
-    protected $fillable = ['name', 'category', 'price_per_person', 'instructor_reward', 'meeting_offset_minutes', 'description', 'active'];
+    protected $fillable = ['name', 'category', 'price_per_person', 'instructor_reward', 'number_of_days', 'meeting_offset_minutes', 'duration_minutes', 'description', 'active'];
 
     protected $casts = [
         'price_per_person' => 'decimal:2',
         'instructor_reward' => 'decimal:2',
+        'number_of_days' => 'integer',
         'meeting_offset_minutes' => 'integer',
+        'duration_minutes' => 'integer',
         'active' => 'boolean',
     ];
 

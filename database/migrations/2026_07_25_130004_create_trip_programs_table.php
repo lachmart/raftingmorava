@@ -17,8 +17,12 @@ return new class extends Migration
             $table->enum('category', ['school', 'domestic', 'foreign'])->default('domestic');
             $table->decimal('price_per_person', 10, 2)->nullable();
             $table->decimal('instructor_reward', 10, 2)->nullable();
+            // Explicit trip length in days – sets the trip's end date (independent of the boarding-point rows).
+            $table->unsignedSmallInteger('number_of_days')->default(1);
             // How many minutes before the start the meeting (sraz) is – used to auto-fill the trip's sraz.
             $table->unsignedSmallInteger('meeting_offset_minutes')->default(50);
+            // Trip duration in minutes – used to auto-fill the end time (start + duration).
+            $table->unsignedSmallInteger('duration_minutes')->nullable();
             $table->text('description')->nullable();
             $table->boolean('active')->default(true);
             $table->timestamps();

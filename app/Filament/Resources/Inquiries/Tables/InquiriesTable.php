@@ -102,11 +102,11 @@ class InquiriesTable
             ]);
     }
 
-    /** Trip length in days = number of days in the program's location template (min 1). */
+    /** Trip length in days = the program's explicit number of days (min 1). */
     private static function templateDays($programId): int
     {
-        $count = $programId ? (TripProgram::find($programId)?->programDays()->count() ?? 0) : 0;
+        $days = $programId ? (TripProgram::find($programId)?->number_of_days ?? 1) : 1;
 
-        return max(1, $count);
+        return max(1, $days);
     }
 }

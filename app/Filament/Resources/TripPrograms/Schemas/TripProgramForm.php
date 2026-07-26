@@ -34,6 +34,12 @@ class TripProgramForm
                             ->required()
                             ->numeric()
                             ->default(0.0),
+                        TextInput::make('number_of_days')->label('Počet dní')
+                            ->numeric()->minValue(1)->default(1)->required()
+                            ->helperText('Délka výletu ve dnech – podle toho se určí termín do.'),
+                        TextInput::make('duration_minutes')->label('Délka trvání (min)')
+                            ->numeric()->minValue(0)
+                            ->helperText('Konec výletu se předvyplní jako start plus tento počet minut. Prázdné = nevyplní se.'),
                         TextInput::make('meeting_offset_minutes')->label('Sraz před startem (min)')
                             ->numeric()->minValue(0)->default(50)->required()
                             ->helperText('Sraz výletu se předvyplní jako start minus tento počet minut.'),

@@ -29,8 +29,8 @@ class ConvertInquiryToTrip
             $programId = $data['trip_program_id'] ?? $inquiry->program_id;
             $program = $programId ? TripProgram::find($programId) : null;
 
-            // Trip length = number of days in the program's location template (min 1).
-            $dayCount = max(1, $program?->programDays()->count() ?? 0);
+            // Trip length = the program's explicit number of days (min 1).
+            $dayCount = max(1, $program?->number_of_days ?? 1);
             $to = $from->copy()->addDays($dayCount - 1);
 
             $trip = Trip::create([
@@ -47,17 +47,22 @@ class ConvertInquiryToTrip
                 'inquiry_id' => $inquiry->id,
             ]);
 
-            // Location template from the program (order → location_id); extra days stay without a location.
+            // Boarding-point template from the program (order → location_id); extra days stay empty.
             $dayLocations = $program
                 ? $program->programDays()->pluck('location_id', 'order')
                 : collect();
 
-            // Day 1 gets the confirmed start time; sraz is pre-filled as start minus the program offset.
+            // Day 1 gets the confirmed start time; sraz = start − offset, konec = start + duration.
             $startTime = $data['start_time'] ?? null;
             $meetingTime = null;
+            $endTime = null;
             if ($startTime) {
+                $start = Carbon::parse($startTime);
                 $offset = $program?->meeting_offset_minutes ?? 50;
-                $meetingTime = Carbon::parse($startTime)->subMinutes($offset)->format('H:i');
+                $meetingTime = $start->copy()->subMinutes($offset)->format('H:i');
+                if ($program?->duration_minutes) {
+                    $endTime = $start->copy()->addMinutes($program->duration_minutes)->format('H:i');
+                }
             }
 
             // Generate the trip days.
@@ -69,6 +74,7 @@ class ConvertInquiryToTrip
                     'location_id' => $dayLocations[$order] ?? null,
                     'start_time' => $order === 1 ? $startTime : null,
                     'meeting_time' => $order === 1 ? $meetingTime : null,
+                    'end_time' => $order === 1 ? $endTime : null,
                 ]);
             }
 
