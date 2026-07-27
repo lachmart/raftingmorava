@@ -15,7 +15,7 @@
                     Lidé s nevyplacenými odměnami za proběhlé dny výletů.
                 </span>
                 <span class="text-sm font-semibold">
-                    Celkem dluženo: {{ number_format((float) $grandTotal, 0, ',', ' ') }} Kč
+                    Celkem k vyplacení: {{ number_format((float) $grandTotal, 0, ',', ' ') }} Kč
                 </span>
             </div>
 
