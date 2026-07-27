@@ -33,11 +33,18 @@ class ActivitiesRelationManager extends RelationManager
 
     // Czech labels for the logged fields (see each model's getActivitylogOptions()).
     private const FIELD_LABELS = [
-        'name' => 'Název', 'type' => 'Typ', 'status' => 'Stav', 'date_from' => 'Termín od',
-        'date_to' => 'Termín do', 'planned_paying_count' => 'Platících', 'instructor_reward' => 'Odměna',
-        'total_price' => 'Cena', 'trip_program_id' => 'Program',
+        // Trip
+        'name' => 'Název', 'type' => 'Typ', 'status' => 'Stav', 'trip_program_id' => 'Program',
+        'date_from' => 'Termín od', 'date_to' => 'Termín do',
+        'planned_paying_count' => 'Platících', 'planned_escort_count' => 'Doprovod', 'children_ages' => 'Věk dětí',
+        'instructor_reward' => 'Odměna', 'total_price' => 'Cena',
+        'client_name' => 'Klient', 'client_email' => 'E-mail klienta', 'client_phone' => 'Telefon klienta', 'onsite_phone' => 'Kontakt na místě',
+        'actual_paying_count' => 'Platících (skut.)', 'actual_escort_count' => 'Doprovod (skut.)',
+        'amount_paid' => 'Zaplaceno', 'payment_method' => 'Způsob úhrady', 'document_number' => 'Číslo dokladu', 'payment_date' => 'Datum úhrady',
+        // Trip day
         'date' => 'Datum', 'order' => 'Pořadí', 'meeting_time' => 'Sraz', 'start_time' => 'Start',
         'end_time' => 'Konec', 'location_id' => 'Lokace (ID)',
+        // Assignment
         'user_id' => 'Osoba (ID)', 'reward' => 'Odměna', 'paid' => 'Vyplaceno', 'paid_date' => 'Datum výplaty',
     ];
 

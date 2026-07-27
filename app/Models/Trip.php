@@ -67,7 +67,13 @@ class Trip extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'type', 'status', 'date_from', 'date_to', 'planned_paying_count', 'instructor_reward', 'total_price', 'trip_program_id'])
+            ->logOnly([
+                'name', 'type', 'status', 'trip_program_id',
+                'date_from', 'date_to', 'planned_paying_count', 'planned_escort_count', 'children_ages',
+                'instructor_reward', 'total_price',
+                'client_name', 'client_email', 'client_phone', 'onsite_phone',
+                'actual_paying_count', 'actual_escort_count', 'amount_paid', 'payment_method', 'document_number', 'payment_date',
+            ])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }
