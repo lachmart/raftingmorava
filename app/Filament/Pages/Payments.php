@@ -27,6 +27,14 @@ class Payments extends Page
     // Currently expanded user (detail with per-trip breakdown), null = none.
     public ?int $selectedUserId = null;
 
+    // Which view: 'unpaid' (owed) or 'paid' (history of paid rewards).
+    public string $tab = 'unpaid';
+
+    // Period filter for the paid-rewards history (by paid_date).
+    public ?string $paidFrom = null;
+
+    public ?string $paidTo = null;
+
     public static function getNavigationLabel(): string
     {
         return 'Platby';
@@ -34,7 +42,7 @@ class Payments extends Page
 
     public function getTitle(): string
     {
-        return 'Platby – nevyplacené odměny';
+        return 'Platby';
     }
 
     public static function canAccess(): bool
@@ -93,6 +101,21 @@ class Payments extends Page
             })
             ->sortBy('date_from')
             ->values();
+    }
+
+    /** History of paid rewards (paid=true, reward>0), newest first, optionally filtered by paid date. */
+    public function paidRewards()
+    {
+        return TripDayAssignment::query()
+            ->where('paid', true)
+            ->where('reward', '>', 0)
+            ->when($this->paidFrom, fn ($q, $v) => $q->whereDate('paid_date', '>=', $v))
+            ->when($this->paidTo, fn ($q, $v) => $q->whereDate('paid_date', '<=', $v))
+            ->with(['user', 'tripDay.trip'])
+            ->orderByDesc('paid_date')
+            ->orderByDesc('id')
+            ->limit(500)
+            ->get();
     }
 
     public function toggleDetail(int $userId): void
