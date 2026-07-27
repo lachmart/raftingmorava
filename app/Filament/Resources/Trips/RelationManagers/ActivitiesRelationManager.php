@@ -31,6 +31,59 @@ class ActivitiesRelationManager extends RelationManager
         TripDayAssignment::class => 'Přiřazení',
     ];
 
+    // Czech labels for the logged fields (see each model's getActivitylogOptions()).
+    private const FIELD_LABELS = [
+        'name' => 'Název', 'type' => 'Typ', 'status' => 'Stav', 'date_from' => 'Termín od',
+        'date_to' => 'Termín do', 'planned_paying_count' => 'Platících', 'instructor_reward' => 'Odměna',
+        'total_price' => 'Cena', 'trip_program_id' => 'Program',
+        'date' => 'Datum', 'order' => 'Pořadí', 'meeting_time' => 'Sraz', 'start_time' => 'Start',
+        'end_time' => 'Konec', 'location_id' => 'Lokace (ID)',
+        'user_id' => 'Osoba (ID)', 'reward' => 'Odměna', 'paid' => 'Vyplaceno', 'paid_date' => 'Datum výplaty',
+    ];
+
+    /** Human-readable summary of what changed: "Sraz: 08:00 → 08:30; Vyplaceno: ne → ano". */
+    public static function changeSummary($record): string
+    {
+        $props = $record->properties;
+        $new = collect(data_get($props, 'attributes', []));
+        $old = collect(data_get($props, 'old', []));
+
+        if ($new->isEmpty()) {
+            return '—';
+        }
+
+        return $new->map(function ($value, $key) use ($old) {
+            $label = self::FIELD_LABELS[$key] ?? $key;
+            $newVal = self::formatValue($value);
+
+            if ($old->has($key) && $old->get($key) !== $value) {
+                return $label . ': ' . self::formatValue($old->get($key)) . ' → ' . $newVal;
+            }
+
+            return $label . ': ' . $newVal;
+        })->implode('; ');
+    }
+
+    private static function formatValue($value): string
+    {
+        if ($value === null || $value === '') {
+            return '—';
+        }
+        if (is_bool($value)) {
+            return $value ? 'ano' : 'ne';
+        }
+        // ISO date/time strings → short Czech date.
+        if (is_string($value) && preg_match('/^\d{4}-\d{2}-\d{2}T/', $value)) {
+            return \Illuminate\Support\Carbon::parse($value)->format('d.m.Y');
+        }
+        // Time "HH:MM:SS" → "HH:MM".
+        if (is_string($value) && preg_match('/^\d{2}:\d{2}:\d{2}$/', $value)) {
+            return substr($value, 0, 5);
+        }
+
+        return (string) $value;
+    }
+
     public function table(Table $table): Table
     {
         $trip = $this->getOwnerRecord();
@@ -57,10 +110,10 @@ class ActivitiesRelationManager extends RelationManager
                         default => (string) $state,
                     }),
                 TextColumn::make('causer.name')->label('Kdo')->placeholder('systém'),
-                TextColumn::make('properties')->label('Změny')->limit(60)->wrap()
-                    // properties may arrive as an array or a Collection – data_get handles both.
-                    ->formatStateUsing(fn ($state) => collect(data_get($state, 'attributes', []))
-                        ->map(fn ($v, $k) => "{$k}: {$v}")->implode(', ')),
+                // Read the whole record (Filament would otherwise iterate the properties collection
+                // and call the formatter per element, losing the "attributes"/"old" structure).
+                TextColumn::make('changes')->label('Změny')->wrap()
+                    ->state(fn ($record) => self::changeSummary($record)),
             ])
             ->paginated([10, 25, 50]);
     }
