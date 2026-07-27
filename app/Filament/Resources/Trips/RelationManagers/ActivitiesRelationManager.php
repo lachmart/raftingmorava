@@ -58,7 +58,9 @@ class ActivitiesRelationManager extends RelationManager
                     }),
                 TextColumn::make('causer.name')->label('Kdo')->placeholder('systém'),
                 TextColumn::make('properties')->label('Změny')->limit(60)->wrap()
-                    ->formatStateUsing(fn ($state) => is_iterable($state) ? collect($state->get('attributes', []))->map(fn ($v, $k) => "{$k}: {$v}")->implode(', ') : ''),
+                    // properties may arrive as an array or a Collection – data_get handles both.
+                    ->formatStateUsing(fn ($state) => collect(data_get($state, 'attributes', []))
+                        ->map(fn ($v, $k) => "{$k}: {$v}")->implode(', ')),
             ])
             ->paginated([10, 25, 50]);
     }
