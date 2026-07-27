@@ -2,8 +2,11 @@
 
 namespace App\Filament\Resources\Trips\RelationManagers;
 
+use App\Models\Location;
 use App\Models\TripDay;
 use App\Models\TripDayAssignment;
+use App\Models\TripProgram;
+use App\Models\User;
 use BackedEnum;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
@@ -43,10 +46,13 @@ class ActivitiesRelationManager extends RelationManager
         'amount_paid' => 'Zaplaceno', 'payment_method' => 'Způsob úhrady', 'document_number' => 'Číslo dokladu', 'payment_date' => 'Datum úhrady',
         // Trip day
         'date' => 'Datum', 'order' => 'Pořadí', 'meeting_time' => 'Sraz', 'start_time' => 'Start',
-        'end_time' => 'Konec', 'location_id' => 'Lokace (ID)',
+        'end_time' => 'Konec', 'location_id' => 'Nástupní místo',
         // Assignment
-        'user_id' => 'Osoba (ID)', 'reward' => 'Odměna', 'paid' => 'Vyplaceno', 'paid_date' => 'Datum výplaty',
+        'user_id' => 'Osoba', 'reward' => 'Odměna', 'paid' => 'Vyplaceno', 'paid_date' => 'Datum výplaty',
     ];
+
+    /** Per-request cache of resolved names for id fields (model:id → name). */
+    private static array $nameCache = [];
 
     /** Human-readable summary of what changed: "Sraz: 08:00 → 08:30; Vyplaceno: ne → ano". */
     public static function changeSummary($record): string
@@ -59,16 +65,47 @@ class ActivitiesRelationManager extends RelationManager
             return '—';
         }
 
-        return $new->map(function ($value, $key) use ($old) {
+        $subject = (string) $record->subject_type;
+
+        return $new->map(function ($value, $key) use ($old, $subject) {
             $label = self::FIELD_LABELS[$key] ?? $key;
-            $newVal = self::formatValue($value);
+            $newVal = self::displayValue($key, $value, $subject);
 
             if ($old->has($key) && $old->get($key) !== $value) {
-                return $label . ': ' . self::formatValue($old->get($key)) . ' → ' . $newVal;
+                return $label . ': ' . self::displayValue($key, $old->get($key), $subject) . ' → ' . $newVal;
             }
 
             return $label . ': ' . $newVal;
         })->implode('; ');
+    }
+
+    /** Resolve id fields to names and enum values to Czech labels; else formatValue(). */
+    private static function displayValue(string $key, $value, string $subject): string
+    {
+        if ($value === null || $value === '') {
+            return '—';
+        }
+
+        return match (true) {
+            $key === 'location_id' => self::resolveName(Location::class, $value),
+            $key === 'user_id' => self::resolveName(User::class, $value),
+            $key === 'trip_program_id' => self::resolveName(TripProgram::class, $value),
+            $key === 'status' => \App\Models\Trip::STATUSES[$value] ?? $value,
+            $key === 'payment_method' => \App\Models\Trip::PAYMENT_METHODS[$value] ?? $value,
+            $key === 'type' && $subject === TripDayAssignment::class => TripDayAssignment::TYPES[$value] ?? $value,
+            $key === 'type' => \App\Models\Trip::TYPES[$value] ?? $value,
+            default => self::formatValue($value),
+        };
+    }
+
+    private static function resolveName(string $model, $id): string
+    {
+        $cacheKey = $model . ':' . $id;
+        if (! array_key_exists($cacheKey, self::$nameCache)) {
+            self::$nameCache[$cacheKey] = $model::find($id)?->name ?? '#' . $id;
+        }
+
+        return self::$nameCache[$cacheKey];
     }
 
     private static function formatValue($value): string
