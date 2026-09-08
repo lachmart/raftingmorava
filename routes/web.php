@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CronController;
 use App\Http\Controllers\TripSheetController;
 use Illuminate\Support\Facades\Route;
 
@@ -8,3 +9,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/trip-sheet/{trip}', TripSheetController::class)
     ->middleware('auth')
     ->name('trip.sheet');
+
+// Servisni endpointy pres URL – hosting neumi CLI.
+Route::get('/cron/{token}', [CronController::class, 'run'])->name('cron');
+Route::get('/cron/{token}/clear-cache', [CronController::class, 'clearCache'])->name('cron.clear-cache');

@@ -8,4 +8,7 @@ return [
 
     // Shared secret token for receiving inquiries from WordPress (POST /api/inquiries).
     'inquiry_secret' => env('INQUIRY_WEBHOOK_SECRET', ''),
+
+    // Secret token in the cron URL (GET /cron/{token}) – hosting runs cron over HTTP only.
+    'cron_token' => env('CRON_TOKEN', ''),
 ];

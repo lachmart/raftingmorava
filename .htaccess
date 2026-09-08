@@ -1,0 +1,23 @@
+# Presmerovani vsech pozadavku do slozky /public
+# (pro webhosting, kde nelze zmenit document root)
+#
+# POZOR: hosting povoluje z prikazu Options pouze volbu Indexes. Jakakoli jina
+# (napr. -MultiViews) shodi cely web na chybu 500 – "Option MultiViews not allowed here".
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Pokud je web v podslozce, uprav napr. na: RewriteBase /raftingmorava/
+    RewriteBase /
+
+    # Zakaz pristupu k citlivym souborum a slozkam
+    RewriteRule ^(\.env|\.env\..*|composer\.(json|lock)|package(-lock)?\.json|artisan|phpunit\.xml|README\.md)$ - [F,L]
+    RewriteRule ^(app|bootstrap|config|database|resources|routes|storage|tests|vendor|node_modules|\.git|\.ddev|\.idea|docs)(/|$) - [F,L]
+
+    # Vse ostatni presmeruj do /public (lookahead brani zacykleni)
+    RewriteRule ^(?!public/)(.*)$ public/$1 [L]
+</IfModule>
+
+Options -Indexes
+
+DirectoryIndex public/index.php index.php

@@ -1,7 +1,6 @@
 <IfModule mod_rewrite.c>
-    <IfModule mod_negotiation.c>
-        Options -MultiViews -Indexes
-    </IfModule>
+    # Hosting povoluje u Options pouze volbu Indexes – "-MultiViews" by shodilo web na 500.
+    Options -Indexes
 
     RewriteEngine On
 
