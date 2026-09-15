@@ -2,6 +2,9 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Pages\Payments;
+use App\Filament\Pages\Planning;
+use App\Filament\Resources\Inquiries\InquiryResource;
 use App\Models\Inquiry;
 use App\Models\Trip;
 use App\Models\TripDay;
@@ -49,22 +52,26 @@ class StatsOverview extends BaseWidget
             Stat::make('Nadcházející výlety', $upcoming)
                 ->description('Neproběhlé a nezrušené')
                 ->descriptionIcon('heroicon-m-globe-alt')
-                ->color('info'),
+                ->color('info')
+                ->url(Planning::getUrl()),
 
             Stat::make('Nepřiřazené (6 týdnů)', $unassigned)
                 ->description('Dny s instruktorem bez instruktora')
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
-                ->color($unassigned > 0 ? 'warning' : 'success'),
+                ->color($unassigned > 0 ? 'warning' : 'success')
+                ->url(Planning::getUrl(['filters' => ['unassigned' => ['isActive' => true]]])),
 
             Stat::make('Nové poptávky', $newInquiries)
                 ->description('Čekají na zpracování')
                 ->descriptionIcon('heroicon-m-inbox-arrow-down')
-                ->color($newInquiries > 0 ? 'warning' : 'gray'),
+                ->color($newInquiries > 0 ? 'warning' : 'gray')
+                ->url(InquiryResource::getUrl('index', ['filters' => ['status' => ['value' => 'new']]])),
 
             Stat::make('K vyplacení', number_format($owed, 0, ',', ' ') . ' Kč')
                 ->description('Nevyplacené odměny za proběhlé dny')
                 ->descriptionIcon('heroicon-m-banknotes')
-                ->color($owed > 0 ? 'danger' : 'success'),
+                ->color($owed > 0 ? 'danger' : 'success')
+                ->url(Payments::getUrl()),
         ];
     }
 }

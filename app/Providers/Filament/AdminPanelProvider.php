@@ -6,6 +6,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -41,6 +42,14 @@ class AdminPanelProvider extends PanelProvider
             ->favicon(asset('favicon.png'))
             // The left menu can collapse on desktop into a narrow icon strip (less space).
             ->sidebarCollapsibleOnDesktop()
+            // Fixed menu group order (Provoz first – it's used the most day to day).
+            ->navigationGroups([
+                NavigationGroup::make('Provoz'),
+                NavigationGroup::make('Přehledy'),
+                NavigationGroup::make('Správa'),
+                NavigationGroup::make('Číselníky'),
+                NavigationGroup::make('Nápověda'),
+            ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')

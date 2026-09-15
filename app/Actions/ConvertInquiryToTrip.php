@@ -10,7 +10,9 @@ use App\Models\TripProgram;
 use App\Notifications\CustomerInquiryConfirmedNotification;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Throwable;
 
 /**
  * Converts an inquiry to a trip: creates a Trip (reward pre-filled from the program), generates the
@@ -23,7 +25,7 @@ class ConvertInquiryToTrip
 {
     public function handle(Inquiry $inquiry, array $data): Trip
     {
-        return DB::transaction(function () use ($inquiry, $data) {
+        $trip = DB::transaction(function () use ($inquiry, $data) {
             $from = Carbon::parse($data['date_from']);
 
             $programId = $data['trip_program_id'] ?? $inquiry->program_id;
@@ -89,13 +91,26 @@ class ConvertInquiryToTrip
 
             $inquiry->update(['trip_id' => $trip->id, 'status' => 'confirmed']);
 
-            // Automatic confirmation email to the customer (queued).
-            if ($inquiry->client_email) {
-                Notification::route('mail', $inquiry->client_email)
-                    ->notify(new CustomerInquiryConfirmedNotification($trip));
-            }
-
             return $trip;
         });
+
+        // Confirmation e-mail goes out only AFTER the transaction has committed, and a delivery
+        // failure must never undo the conversion - QUEUE_CONNECTION=sync sends it in-request, so
+        // an unreachable SMTP server would otherwise roll the whole trip back and return a 500.
+        if ($inquiry->client_email) {
+            try {
+                Notification::route('mail', $inquiry->client_email)
+                    ->notify(new CustomerInquiryConfirmedNotification($trip));
+            } catch (Throwable $e) {
+                Log::error('Confirmation e-mail for inquiry could not be sent.', [
+                    'inquiry_id' => $inquiry->id,
+                    'trip_id' => $trip->id,
+                    'recipient' => $inquiry->client_email,
+                    'exception' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $trip;
     }
 }

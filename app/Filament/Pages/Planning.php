@@ -33,9 +33,12 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification as MailNotification;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use Livewire\Attributes\Url;
+use Throwable;
 use UnitEnum;
 
 // Interactive Planning (Monday meeting). Clicking a row opens a large grid for assigning
@@ -45,6 +48,10 @@ class Planning extends Page implements HasTable
     use InteractsWithTable;
 
     protected string $view = 'filament.pages.planning';
+
+    // Lets the "Nepřiřazené" dashboard stat deep-link with the filter already active.
+    #[Url(as: 'filters')]
+    public ?array $tableFilters = null;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-calendar-days';
 
@@ -322,14 +329,37 @@ class Planning extends Page implements HasTable
                         ->whereHas('assignments.tripDay', fn ($q) => $q->where('date', '>=', Carbon::today()->toDateString()))
                         ->get();
 
+                    // One failing recipient must not abort the rest of the batch.
+                    $sent = 0;
+                    $failed = [];
+
                     foreach ($instructors as $instructor) {
-                        MailNotification::send($instructor, new InstructorTripsSummaryNotification());
+                        try {
+                            MailNotification::send($instructor, new InstructorTripsSummaryNotification());
+                            $sent++;
+                        } catch (Throwable $e) {
+                            $failed[] = $instructor->email;
+                            Log::error('Summary e-mail for instructor could not be sent.', [
+                                'user_id' => $instructor->id,
+                                'recipient' => $instructor->email,
+                                'exception' => $e->getMessage(),
+                            ]);
+                        }
                     }
 
-                    FilamentNotification::make()->success()
-                        ->title('Souhrnné e-maily odeslány')
-                        ->body('Počet instruktorů: ' . $instructors->count())
-                        ->send();
+                    if ($failed === []) {
+                        FilamentNotification::make()->success()
+                            ->title('Souhrnné e-maily odeslány')
+                            ->body('Počet instruktorů: ' . $sent)
+                            ->send();
+                    } else {
+                        FilamentNotification::make()->warning()
+                            ->title('Část e-mailů se nepodařilo odeslat')
+                            ->body('Odesláno: ' . $sent . ' · Neodesláno: ' . count($failed)
+                                . ' (' . implode(', ', array_slice($failed, 0, 5)) . ')')
+                            ->persistent()
+                            ->send();
+                    }
                 }),
         ];
     }

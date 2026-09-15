@@ -47,11 +47,20 @@ class CustomerInquiryConfirmedNotification extends TemplatedNotification
         $startTime = $trip->days()->orderBy('order')->value('start_time');
         $startTime = $startTime ? substr((string) $startTime, 0, 5) : '';
 
+        // A one-day trip must read "11.09.2026", not "11.09.2026 - 11.09.2026". The dash used to
+        // live in the template text, so the range is now built here and exposed as one macro.
+        $dateFrom = $trip->date_from?->format('d.m.Y') ?? '';
+        $dateTo = $trip->date_to?->format('d.m.Y') ?? '';
+        $dateRange = ($dateTo === '' || $dateTo === $dateFrom)
+            ? $dateFrom
+            : $dateFrom . ' – ' . $dateTo;
+
         return [
             'client_name' => $trip->client_name ?? '',
             'program_name' => $trip->program?->name ?? $trip->name,
-            'date_from' => $trip->date_from?->format('d.m.Y') ?? '',
-            'date_to' => $trip->date_to?->format('d.m.Y') ?? '',
+            'date_range' => $dateRange,
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
             'start_time' => $startTime,
             'total_price' => $totalPrice,
             'company_phone' => config('company.phone'),

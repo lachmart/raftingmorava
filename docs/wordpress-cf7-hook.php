@@ -19,7 +19,7 @@ if (! defined('ABSPATH')) {
 
 // --- Configuration -------------------------------------------------------
 define('RAFTINGMORAVA_ENDPOINT', 'https://system.raftingmorava.cz/api/inquiries');
-define('RAFTINGMORAVA_TOKEN', 'zmen-me-na-nahodny-tajny-retezec'); // = INQUIRY_WEBHOOK_SECRET
+define('RAFTINGMORAVA_TOKEN', 'REDACTED'); // = INQUIRY_WEBHOOK_SECRET
 // -------------------------------------------------------------------------
 
 add_action('wpcf7_before_send_mail', function ($contact_form) {

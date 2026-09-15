@@ -27,6 +27,7 @@ class EmailTemplate extends Model
             self::KEY_CONFIRMATION => [
                 'client_name' => 'Jméno klienta',
                 'program_name' => 'Název programu / výletu',
+                'date_range' => 'Termín výletu (u jednodenního jen jedno datum)',
                 'date_from' => 'Termín od',
                 'date_to' => 'Termín do',
                 'start_time' => 'Čas startu',
