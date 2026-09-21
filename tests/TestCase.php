@@ -15,7 +15,9 @@ abstract class TestCase extends BaseTestCase
             Role::findOrCreate($r, 'web');
         }
 
-        $user = User::factory()->create();
+        // `active` isn't passed to create(), so it only exists as a DB-level default – the
+        // in-memory model won't see it until refreshed. Needed by canAccessPanel() checks.
+        $user = User::factory()->create()->refresh();
         $user->assignRole($role);
 
         return $user;

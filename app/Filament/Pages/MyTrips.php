@@ -37,14 +37,23 @@ class MyTrips extends Page
         return auth()->user()?->hasRole('Instructor') ?? false;
     }
 
-    /** Upcoming assignments of the logged-in instructor. */
-    public function myAssignments()
+    // Which list is shown: 'upcoming' or 'past'.
+    public string $tab = 'upcoming';
+
+    /** Upcoming assignments of the logged-in instructor (today → +6 months, soonest first). */
+    public function upcomingAssignments()
     {
         return InstructorSchedule::assignmentsBetween(
             auth()->user(),
             Carbon::today(),
             Carbon::today()->addMonths(6),
         );
+    }
+
+    /** Past assignments of the logged-in instructor (whole history, newest first). */
+    public function pastAssignments()
+    {
+        return InstructorSchedule::pastAssignmentsFor(auth()->user());
     }
 
     /** Trips the instructor is assigned to (for selection when writing a note). */

@@ -19,6 +19,16 @@ class InstructorSchedule
             ->sortBy(fn ($a) => $a->tripDay->date);
     }
 
+    /** Instructor's past assignments (before today), newest first. No lower bound – whole history. */
+    public static function pastAssignmentsFor(User $instructor)
+    {
+        return $instructor->assignments()
+            ->with(['tripDay.trip', 'tripDay.location', 'tripDay.vehicles'])
+            ->whereHas('tripDay', fn ($q) => $q->whereDate('date', '<', Carbon::today()->toDateString()))
+            ->get()
+            ->sortByDesc(fn ($a) => $a->tripDay->date);
+    }
+
     /** Upcoming trips from today onward (for the summary email). */
     public static function upcomingList(User $instructor): string
     {
@@ -50,12 +60,12 @@ class InstructorSchedule
             $type = TripDayAssignment::TYPES[$a->type] ?? $a->type;
             // Instructors get both sraz (when to meet) and start (when the trip begins).
             $times = collect([
-                $day->meeting_time ? 'sraz ' . substr((string) $day->meeting_time, 0, 5) : null,
-                $day->start_time ? 'start ' . substr((string) $day->start_time, 0, 5) : null,
+                $day->meeting_time ? 'sraz '.substr((string) $day->meeting_time, 0, 5) : null,
+                $day->start_time ? 'start '.substr((string) $day->start_time, 0, 5) : null,
             ])->filter()->implode(', ');
-            $times = $times !== '' ? ' ' . $times : '';
-            $location = $day->location?->name ? ' – ' . $day->location->name : '';
-            $vehicle = $day->vehicles->isNotEmpty() ? ' [vozidla: ' . $day->vehicles->pluck('name')->join(', ') . ']' : '';
+            $times = $times !== '' ? ' '.$times : '';
+            $location = $day->location?->name ? ' – '.$day->location->name : '';
+            $vehicle = $day->vehicles->isNotEmpty() ? ' [vozidla: '.$day->vehicles->pluck('name')->join(', ').']' : '';
 
             return "• {$date}{$times} – {$name} ({$type}){$location}{$vehicle}";
         })->implode("\n");
