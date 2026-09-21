@@ -70,5 +70,51 @@ Rafting Morava
 TXT,
             ],
         );
+
+        EmailTemplate::updateOrCreate(
+            ['key' => EmailTemplate::KEY_CLIENT_REMINDER_GUIDED],
+            [
+                'name' => 'Připomínka výletu klientovi (akce s instruktorem)',
+                'description' => 'Odesílá naplánovaný job 14 dní před termínem výletu, s kopií na e-mail firmy.',
+                'subject' => 'Připomínka – za 14 dní Vás čeká výlet',
+                'body' => <<<'TXT'
+Dobrý den {{client_name}},
+
+připomínáme, že {{date_from}} Vás čeká výlet „{{trip_name}}“.
+
+Sraz: {{start_time}} – {{location_name}}
+{{location_note}}
+Mapa: {{location_map_url}}
+
+V případě dotazů nás kontaktujte na {{company_phone}} nebo {{company_email}}.
+
+S pozdravem
+Rafting Morava
+TXT,
+            ],
+        );
+
+        EmailTemplate::updateOrCreate(
+            ['key' => EmailTemplate::KEY_CLIENT_REMINDER_RENTAL],
+            [
+                'name' => 'Připomínka výletu klientovi (půjčovna)',
+                'description' => 'Odesílá naplánovaný job 14 dní před termínem výletu, s kopií na e-mail firmy.',
+                'subject' => 'Připomínka – za 14 dní si vyzvedáváte vybavení',
+                'body' => <<<'TXT'
+Dobrý den {{client_name}},
+
+připomínáme, že {{date_from}} si vyzvedáváte vybavení („{{trip_name}}“).
+
+Čas a místo vyzvednutí: {{start_time}} – {{location_name}}
+{{location_note}}
+Mapa: {{location_map_url}}
+
+V případě dotazů nás kontaktujte na {{company_phone}} nebo {{company_email}}.
+
+S pozdravem
+Rafting Morava
+TXT,
+            ],
+        );
     }
 }

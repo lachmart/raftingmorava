@@ -14,6 +14,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Carbon;
 
 class TripForm
 {
@@ -41,6 +42,7 @@ class TripForm
                                 if ($state && blank($get('instructor_reward'))) {
                                     $set('instructor_reward', TripProgram::find($state)?->instructor_reward);
                                 }
+                                self::syncDateTo($get, $set);
                             }),
                         TextInput::make('instructor_reward')->label('Odměna instruktora za výlet (Kč)')
                             ->numeric()->minValue(0)
@@ -50,8 +52,10 @@ class TripForm
                         Select::make('status')->label('Stav')->options(Trip::STATUSES)->default('planned')->required(),
                         TextInput::make('children_ages')->label('Věkové složení dětí')->placeholder('např. 12–14 let'),
 
-                        DatePicker::make('date_from')->label('Termín od')->required()->native(false)->displayFormat('d.m.Y')->live(),
-                        DatePicker::make('date_to')->label('Termín do')->required()->native(false)->displayFormat('d.m.Y')->live(),
+                        DatePicker::make('date_from')->label('Termín od')->required()->native(false)->displayFormat('d.m.Y')
+                            ->live()->afterStateUpdated(fn (Get $get, Set $set) => self::syncDateTo($get, $set)),
+                        DatePicker::make('date_to')->label('Termín do')->required()->native(false)->displayFormat('d.m.Y')->live()
+                            ->helperText('Předvyplní se podle délky programu; lze upravit ručně.'),
 
                         TextInput::make('planned_paying_count')->label('Platících (plán)')->numeric()->minValue(0),
                         TextInput::make('planned_escort_count')->label('Doprovod – neplatící (plán)')->numeric()->minValue(0),
@@ -64,6 +68,8 @@ class TripForm
                             ->columns(2)
                             ->schema([
                                 TextInput::make('client_name')->label('Jméno / organizace'),
+                                Select::make('customer_category')->label('Kategorie zákazníka')
+                                    ->options(Trip::CUSTOMER_CATEGORIES),
                                 TextInput::make('client_email')->label('E-mail')->email(),
                                 TextInput::make('client_phone')->label('Telefon klienta')->tel(),
                                 TextInput::make('onsite_phone')->label('Kontakt na místě akce')->tel(),
@@ -108,5 +114,23 @@ class TripForm
                         Toggle::make('price_manually_set')->label('Cena upravena ručně (nepřepočítávat)')->inline(false),
                     ]),
             ]);
+    }
+
+    /** Derives "termín do" from "termín od" + the program's number of days (guided trips only). */
+    private static function syncDateTo(Get $get, Set $set): void
+    {
+        $programId = $get('trip_program_id');
+        $from = $get('date_from');
+
+        if (! $programId || ! $from) {
+            return;
+        }
+
+        $days = TripProgram::find($programId)?->number_of_days;
+        if (! $days) {
+            return;
+        }
+
+        $set('date_to', Carbon::parse($from)->addDays($days - 1)->toDateString());
     }
 }

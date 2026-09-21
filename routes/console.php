@@ -33,3 +33,18 @@ Schedule::call(fn () => Artisan::call('instructors:reminder'))
     ->skip(fn () => Cache::get('cron:instructors-reminder') === now()->toDateString())
     ->onSuccess(fn () => Cache::put('cron:instructors-reminder', now()->toDateString(), now()->addDay()))
     ->withoutOverlapping();
+
+/*
+ | 14-day-before reminder for clients (see app/Console/Commands/SendClientTripReminders.php).
+ | Same hourly-URL-cron constraints as above. Unlike the instructor reminder, this one is also
+ | guarded by a per-trip `reminder_sent_at` flag, so a missed day still catches up later - the
+ | daily cache flag here is only to avoid re-querying every minute of the window.
+ */
+Schedule::call(fn () => Artisan::call('clients:trip-reminder'))
+    ->name('clients:trip-reminder')
+    ->everyMinute()
+    ->timezone('Europe/Prague')
+    ->between('08:00', '11:59')
+    ->skip(fn () => Cache::get('cron:clients-trip-reminder') === now()->toDateString())
+    ->onSuccess(fn () => Cache::put('cron:clients-trip-reminder', now()->toDateString(), now()->addDay()))
+    ->withoutOverlapping();

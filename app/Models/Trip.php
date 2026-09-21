@@ -17,10 +17,10 @@ class Trip extends Model
 
     protected $fillable = [
         'trip_program_id', 'type', 'name',
-        'client_name', 'client_email', 'client_phone', 'onsite_phone',
+        'client_name', 'customer_category', 'client_email', 'client_phone', 'onsite_phone',
         'date_from', 'date_to',
         'planned_paying_count', 'planned_escort_count', 'children_ages',
-        'status', 'instructor_reward', 'total_price', 'price_manually_set', 'inquiry_id',
+        'status', 'instructor_reward', 'total_price', 'price_manually_set', 'inquiry_id', 'reminder_sent_at',
         // settlement
         'actual_paying_count', 'actual_escort_count', 'amount_paid',
         'payment_method', 'document_number', 'payment_date',
@@ -34,6 +34,7 @@ class Trip extends Model
         'total_price' => 'decimal:2',
         'amount_paid' => 'decimal:2',
         'price_manually_set' => 'boolean',
+        'reminder_sent_at' => 'datetime',
     ];
 
     // User-facing labels stay Czech; the DB values are English.
@@ -54,6 +55,13 @@ class Trip extends Model
         'cash' => 'Hotově',
     ];
 
+    // Who the trip is for (not to be confused with the program's own category).
+    public const CUSTOMER_CATEGORIES = [
+        'school_nonprofit' => 'Školy a neziskovky',
+        'company' => 'Firmy',
+        'public' => 'Veřejnost',
+    ];
+
     protected static function booted(): void
     {
         // Deliverable #5: for a guided trip pre-fill the reward from the program unless set manually.
@@ -71,7 +79,7 @@ class Trip extends Model
                 'name', 'type', 'status', 'trip_program_id',
                 'date_from', 'date_to', 'planned_paying_count', 'planned_escort_count', 'children_ages',
                 'instructor_reward', 'total_price',
-                'client_name', 'client_email', 'client_phone', 'onsite_phone',
+                'client_name', 'customer_category', 'client_email', 'client_phone', 'onsite_phone',
                 'actual_paying_count', 'actual_escort_count', 'amount_paid', 'payment_method', 'document_number', 'payment_date',
             ])
             ->logOnlyDirty()
@@ -98,6 +106,35 @@ class Trip extends Model
 
         $this->total_price = $sum * $days;
         $this->saveQuietly();
+    }
+
+    /**
+     * Creates one TripDay per calendar day between date_from and date_to (inclusive), using the
+     * program's day-location template where available. No-op if the trip already has days, so it's
+     * safe to call after every create without disturbing days added/edited manually afterwards.
+     */
+    public function generateDays(): void
+    {
+        if (! $this->date_from || $this->days()->exists()) {
+            return;
+        }
+
+        $from = $this->date_from;
+        $to = $this->date_to ?? $from;
+
+        $dayLocations = $this->program
+            ? $this->program->programDays()->pluck('location_id', 'order')
+            : collect();
+
+        $order = 1;
+        for ($date = $from->copy(); $date->lte($to); $date->addDay()) {
+            $this->days()->create([
+                'date' => $date->toDateString(),
+                'order' => $order,
+                'location_id' => $dayLocations[$order] ?? null,
+            ]);
+            $order++;
+        }
     }
 
     public function program(): BelongsTo

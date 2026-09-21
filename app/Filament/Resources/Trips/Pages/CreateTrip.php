@@ -9,9 +9,10 @@ class CreateTrip extends CreateRecord
 {
     protected static string $resource = TripResource::class;
 
-    // After creating (and syncing equipment) recalculate the rental price.
+    // After creating (and syncing equipment): generate the trip days and recalculate the rental price.
     protected function afterCreate(): void
     {
+        $this->record->generateDays();
         $this->record->refresh()->recalculateRentalPrice();
     }
 }

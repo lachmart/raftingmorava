@@ -14,6 +14,8 @@ class EmailTemplate extends Model
     public const KEY_CONFIRMATION = 'inquiry_confirmation';
     public const KEY_SUMMARY = 'instructor_summary';
     public const KEY_REMINDER = 'instructor_reminder';
+    public const KEY_CLIENT_REMINDER_GUIDED = 'client_reminder_guided';
+    public const KEY_CLIENT_REMINDER_RENTAL = 'client_reminder_rental';
 
     /**
      * Available macros per template type (token => Czech help text). Also shown as hints in the admin.
@@ -42,6 +44,28 @@ class EmailTemplate extends Model
             self::KEY_REMINDER => [
                 'instructor_name' => 'Jméno instruktora',
                 'tomorrow_trip_list' => 'Automaticky vygenerovaný seznam zítřejších výletů/dnů',
+            ],
+            self::KEY_CLIENT_REMINDER_GUIDED => [
+                'client_name' => 'Jméno klienta',
+                'trip_name' => 'Název programu / výletu',
+                'date_from' => 'Termín výletu',
+                'start_time' => 'Čas startu',
+                'location_name' => 'Název místa startu',
+                'location_note' => 'Poznámka k místu startu',
+                'location_map_url' => 'Odkaz na mapy.com',
+                'company_phone' => 'Telefon firmy',
+                'company_email' => 'E-mail firmy',
+            ],
+            self::KEY_CLIENT_REMINDER_RENTAL => [
+                'client_name' => 'Jméno klienta',
+                'trip_name' => 'Název výletu',
+                'date_from' => 'Termín výletu',
+                'start_time' => 'Čas startu',
+                'location_name' => 'Název místa startu',
+                'location_note' => 'Poznámka k místu startu',
+                'location_map_url' => 'Odkaz na mapy.com',
+                'company_phone' => 'Telefon firmy',
+                'company_email' => 'E-mail firmy',
             ],
         ];
     }

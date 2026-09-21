@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Location extends Model
 {
-    protected $fillable = ['name', 'active'];
+    protected $fillable = ['name', 'email_note', 'map_url', 'active'];
 
     protected $casts = ['active' => 'boolean'];
 
