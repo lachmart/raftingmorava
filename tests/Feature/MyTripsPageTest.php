@@ -4,10 +4,12 @@ namespace Tests\Feature;
 
 use App\Filament\Pages\MyTrips;
 use App\Models\Trip;
+use App\Models\TripNote;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 class MyTripsPageTest extends TestCase
@@ -64,6 +66,76 @@ class MyTripsPageTest extends TestCase
         Livewire::test(MyTrips::class)
             ->set('tab', 'past')
             ->assertDontSee('Zatím žádné proběhlé výlety.')
+            ->assertSee('Test výlet');
+    }
+
+    public function test_add_note_action_creates_a_note_scoped_to_the_given_day(): void
+    {
+        $instructor = $this->userWithRole('Instructor');
+        $assignment = $this->assignDay($instructor, Carbon::today());
+        $day = $assignment->tripDay;
+
+        $this->actingAs($instructor);
+
+        Livewire::test(MyTrips::class)
+            ->callAction('addNote', data: ['text' => 'Vezmi náhradní pumpu'], arguments: ['dayId' => $day->id]);
+
+        $this->assertDatabaseHas('trip_notes', [
+            'trip_id' => $day->trip_id,
+            'trip_day_id' => $day->id,
+            'text' => 'Vezmi náhradní pumpu',
+            'author_id' => $instructor->id,
+        ]);
+    }
+
+    public function test_add_note_action_rejects_a_day_the_user_is_not_assigned_to(): void
+    {
+        $instructor = $this->userWithRole('Instructor');
+        $otherInstructor = $this->userWithRole('Instructor');
+        $othersDay = $this->assignDay($otherInstructor, Carbon::today())->tripDay;
+
+        $this->actingAs($instructor);
+
+        $this->expectException(HttpException::class);
+        $this->withoutExceptionHandling();
+
+        Livewire::test(MyTrips::class)
+            ->callAction('addNote', data: ['text' => 'Cizí den'], arguments: ['dayId' => $othersDay->id]);
+    }
+
+    public function test_card_shows_notes_from_the_whole_trip_and_an_add_note_button(): void
+    {
+        $instructor = $this->userWithRole('Instructor');
+
+        $trip = Trip::create([
+            'type' => 'guided', 'name' => 'Vícedenní výlet',
+            'date_from' => Carbon::today()->toDateString(), 'date_to' => Carbon::today()->addDay()->toDateString(),
+            'status' => 'planned',
+        ]);
+        $day1 = $trip->days()->create(['date' => Carbon::today()->toDateString(), 'order' => 1]);
+        $day2 = $trip->days()->create(['date' => Carbon::today()->addDay()->toDateString(), 'order' => 2]);
+        $day1->assignments()->create(['user_id' => $instructor->id, 'type' => 'instructor']);
+        $day2->assignments()->create(['user_id' => $instructor->id, 'type' => 'instructor']);
+
+        TripNote::create(['trip_id' => $trip->id, 'trip_day_id' => $day1->id, 'text' => 'Poznámka k prvnímu dni']);
+
+        $this->actingAs($instructor);
+
+        $this->get('/my-trips')
+            ->assertOk()
+            ->assertSee('Poznámka k prvnímu dni')
+            ->assertSeeInOrder(["mountAction('addNote', { dayId: {$day1->id} }", "mountAction('addNote', { dayId: {$day2->id} }"], false);
+    }
+
+    public function test_superadmin_sees_their_own_trips_on_the_page(): void
+    {
+        $superadmin = $this->userWithRole('Superadmin');
+        $this->assignDay($superadmin, Carbon::today());
+
+        $this->actingAs($superadmin);
+
+        $this->get('/my-trips')
+            ->assertOk()
             ->assertSee('Test výlet');
     }
 

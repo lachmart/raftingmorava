@@ -2,12 +2,11 @@
 
 namespace App\Filament\Pages;
 
-use App\Models\Trip;
+use App\Models\TripDay;
 use App\Models\TripNote;
 use App\Support\InstructorSchedule;
 use BackedEnum;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -34,7 +33,7 @@ class MyTrips extends Page
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->hasRole('Instructor') ?? false;
+        return auth()->user()?->hasAnyRole(['Instructor', 'Superadmin']) ?? false;
     }
 
     // Which list is shown: 'upcoming' or 'past'.
@@ -56,34 +55,33 @@ class MyTrips extends Page
         return InstructorSchedule::pastAssignmentsFor(auth()->user());
     }
 
-    /** Trips the instructor is assigned to (for selection when writing a note). */
-    private function myTripsForNote(): array
+    /**
+     * Adds a note to a specific trip day, given as the `dayId` argument – no trip/day picker,
+     * the calling card already knows which day it is. Called from the card as
+     * `mountAction('addNote', { dayId: ... })`.
+     */
+    public function addNoteAction(): Action
     {
-        return Trip::whereHas('days.assignments', fn ($q) => $q->where('user_id', auth()->id()))
-            ->orderByDesc('date_from')
-            ->pluck('name', 'id')
-            ->all();
-    }
+        return Action::make('addNote')
+            ->label('Přidat poznámku')
+            ->icon('heroicon-o-chat-bubble-left-right')
+            ->schema([
+                Textarea::make('text')->label('Text poznámky')->required()->rows(3),
+            ])
+            ->action(function (array $data, array $arguments) {
+                $day = TripDay::findOrFail($arguments['dayId']);
 
-    protected function getHeaderActions(): array
-    {
-        return [
-            Action::make('addNote')
-                ->label('Přidat poznámku')
-                ->icon('heroicon-o-chat-bubble-left-right')
-                ->schema([
-                    Select::make('trip_id')->label('K výletu')
-                        ->options(fn () => $this->myTripsForNote())->required()->searchable(),
-                    Textarea::make('text')->label('Text poznámky')->required()->rows(3),
-                ])
-                ->action(function (array $data) {
-                    TripNote::create([
-                        'trip_id' => $data['trip_id'],
-                        'author_id' => auth()->id(),
-                        'text' => $data['text'],
-                    ]);
-                    Notification::make()->success()->title('Poznámka přidána')->send();
-                }),
-        ];
+                // The Select in the old header action only ever offered the instructor's own
+                // trips – this is the equivalent server-side check now that there is no picker.
+                abort_unless($day->assignments()->where('user_id', auth()->id())->exists(), 403);
+
+                TripNote::create([
+                    'trip_id' => $day->trip_id,
+                    'trip_day_id' => $day->id,
+                    'text' => $data['text'],
+                ]);
+
+                Notification::make()->success()->title('Poznámka přidána')->send();
+            });
     }
 }

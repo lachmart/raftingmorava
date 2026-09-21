@@ -24,6 +24,7 @@ class AccessControlTest extends TestCase
         $this->assertTrue(Planning::canAccess());
         $this->assertTrue(Payments::canAccess());
         $this->assertTrue(Leaderboard::canAccess());
+        $this->assertTrue(MyTrips::canAccess());
         $this->assertTrue(Gate::allows('viewAny', Trip::class));
         $this->assertTrue(Gate::allows('viewAny', TripProgram::class));
         $this->assertTrue(Gate::allows('viewAny', User::class));
@@ -38,6 +39,7 @@ class AccessControlTest extends TestCase
         $this->assertTrue(Gate::allows('viewAny', Trip::class));
 
         $this->assertFalse(Leaderboard::canAccess());
+        $this->assertFalse(MyTrips::canAccess(), 'Jen Superadmin a Instructor mají svůj portál výletů, Admin ne.');
         $this->assertFalse(Gate::allows('viewAny', TripProgram::class));
         $this->assertFalse(Gate::allows('viewAny', User::class));
     }

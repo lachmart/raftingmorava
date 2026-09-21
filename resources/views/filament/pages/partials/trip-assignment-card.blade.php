@@ -30,4 +30,23 @@
             {{ \App\Models\TripDayAssignment::TYPES[$a->type] ?? $a->type }}
         </span>
     </div>
+
+    {{-- Poznámky k celému výletu (ne jen k tomuto dni), ať má instruktor plný kontext. --}}
+    @if ($day->trip?->notes->isNotEmpty())
+        <div class="mt-3 space-y-1 border-t border-gray-100 pt-3 dark:border-gray-800">
+            @foreach ($day->trip->notes as $note)
+                <div class="text-sm">
+                    <span class="text-gray-500 dark:text-gray-400">{{ $note->created_at?->format('d.m.Y') }} {{ $note->author?->name ?? 'Neznámý autor' }}:</span>
+                    {{ $note->text }}
+                </div>
+            @endforeach
+        </div>
+    @endif
+
+    <div class="mt-3 flex justify-end">
+        <x-filament::button size="xs" color="gray" icon="heroicon-o-chat-bubble-left-right"
+            wire:click="mountAction('addNote', { dayId: {{ $day->id }} })">
+            Poznámka
+        </x-filament::button>
+    </div>
 </x-filament::section>

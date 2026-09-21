@@ -13,7 +13,7 @@ class InstructorSchedule
     public static function assignmentsBetween(User $instructor, Carbon $from, Carbon $to)
     {
         return $instructor->assignments()
-            ->with(['tripDay.trip', 'tripDay.location', 'tripDay.vehicles'])
+            ->with(['tripDay.trip.notes.author', 'tripDay.location', 'tripDay.vehicles'])
             ->whereHas('tripDay', fn ($q) => $q->whereBetween('date', [$from->toDateString(), $to->toDateString()]))
             ->get()
             ->sortBy(fn ($a) => $a->tripDay->date);
@@ -23,7 +23,7 @@ class InstructorSchedule
     public static function pastAssignmentsFor(User $instructor)
     {
         return $instructor->assignments()
-            ->with(['tripDay.trip', 'tripDay.location', 'tripDay.vehicles'])
+            ->with(['tripDay.trip.notes.author', 'tripDay.location', 'tripDay.vehicles'])
             ->whereHas('tripDay', fn ($q) => $q->whereDate('date', '<', Carbon::today()->toDateString()))
             ->get()
             ->sortByDesc(fn ($a) => $a->tripDay->date);
