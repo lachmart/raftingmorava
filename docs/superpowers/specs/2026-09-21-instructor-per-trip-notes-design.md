@@ -46,12 +46,14 @@
 - Eager-loading v `assignmentsBetween()` i `pastAssignmentsFor()` rozšířený o
   `tripDay.trip.notes.author`, ať se poznámky nedotahují N+1 dotazem na každou kartu.
 
-### Přístup pro Superadmina (`app/Filament/Pages/MyTrips.php`)
+### Přístup pro všechny role (`app/Filament/Pages/MyTrips.php`)
 
-- `canAccess()`: `hasAnyRole(['Instructor', 'Superadmin'])` místo jen `hasRole('Instructor')`.
+- `canAccess()`: `hasAnyRole(['Superadmin', 'Admin', 'Instructor'])` místo jen
+  `hasRole('Instructor')` (dodatečně rozšířeno z původního "jen Superadmin" na všechny role).
 - Zbytek stránky (výpis, taby, poznámky) je už role-agnostický – pracuje jen s
-  `auth()->user()->assignments()`, takže funguje pro Superadmina beze změny.
-- Superadmin tak vedle svého Dashboardu uvidí v menu i „Moje výlety" se svými přiřazeními.
+  `auth()->user()->assignments()`, takže funguje pro kteroukoli roli beze změny.
+- Superadmin/Admin tak vedle svého Dashboardu uvidí v menu i „Moje výlety" se svými
+  přiřazeními, pokud nějaká mají.
 
 ## Testování
 
@@ -67,5 +69,4 @@
 
 - Žádná úprava/mazání existujících poznámek z instruktorského portálu (jen čtení + přidání,
   stejně jako dnes u admina není řešeno mazání).
-- Žádná změna práv Admina (jen Superadmin byl explicitně požadován).
-- Žádná změna Dashboardu ani jeho viditelnosti pro Superadmina.
+- Žádná změna Dashboardu ani jeho viditelnosti pro Superadmina/Admina.

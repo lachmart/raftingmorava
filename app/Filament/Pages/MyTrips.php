@@ -33,7 +33,8 @@ class MyTrips extends Page
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->hasAnyRole(['Instructor', 'Superadmin']) ?? false;
+        // Any of the app's roles can have their own trip assignments and want this portal.
+        return auth()->user()?->hasAnyRole(['Superadmin', 'Admin', 'Instructor']) ?? false;
     }
 
     // Which list is shown: 'upcoming' or 'past'.

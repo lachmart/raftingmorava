@@ -39,7 +39,7 @@ class AccessControlTest extends TestCase
         $this->assertTrue(Gate::allows('viewAny', Trip::class));
 
         $this->assertFalse(Leaderboard::canAccess());
-        $this->assertFalse(MyTrips::canAccess(), 'Jen Superadmin a Instructor mají svůj portál výletů, Admin ne.');
+        $this->assertTrue(MyTrips::canAccess(), 'Portál výletů vidí všechny role, tedy i Admin.');
         $this->assertFalse(Gate::allows('viewAny', TripProgram::class));
         $this->assertFalse(Gate::allows('viewAny', User::class));
     }
