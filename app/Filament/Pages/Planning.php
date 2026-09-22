@@ -53,6 +53,10 @@ class Planning extends Page implements HasTable
     #[Url(as: 'filters')]
     public ?array $tableFilters = null;
 
+    // Whether the currently open assignment modal's "Řidiči" checklist also shows
+    // non-driver-flagged users. Off by default (see driverOptions()); reset per modal in fillForm().
+    public bool $showNonDriversForDay = false;
+
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-calendar-days';
 
     protected static string|UnitEnum|null $navigationGroup = 'Provoz';
@@ -94,12 +98,12 @@ class Planning extends Page implements HasTable
                         $weekday = Str::ucfirst($record->date?->translatedFormat('l') ?? '');
                         $date = $record->date?->format('d.m.Y');
                         $time = $record->start_time ?: $record->meeting_time;
-                        $timeTxt = $time ? 'start ' . substr((string) $time, 0, 5) : null;
+                        $timeTxt = $time ? 'start '.substr((string) $time, 0, 5) : null;
 
                         return new HtmlString(
-                            '<div class="font-medium">' . e($weekday) . '</div>'
-                            . '<div class="text-sm text-gray-500">' . e($date) . '</div>'
-                            . ($timeTxt ? '<div class="text-sm text-gray-500">' . e($timeTxt) . '</div>' : '')
+                            '<div class="font-medium">'.e($weekday).'</div>'
+                            .'<div class="text-sm text-gray-500">'.e($date).'</div>'
+                            .($timeTxt ? '<div class="text-sm text-gray-500">'.e($timeTxt).'</div>' : '')
                         );
                     })
                     ->sortable(),
@@ -109,10 +113,10 @@ class Planning extends Page implements HasTable
                         $parts = [];
                         $total = $record->trip?->days_count ?? 1;
                         if ($total > 1) {
-                            $parts[] = 'den ' . $record->order . '/' . $total;
+                            $parts[] = 'den '.$record->order.'/'.$total;
                         }
                         if ($record->meeting_time) {
-                            $parts[] = 'sraz ' . substr((string) $record->meeting_time, 0, 5);
+                            $parts[] = 'sraz '.substr((string) $record->meeting_time, 0, 5);
                         }
 
                         return $parts ? implode(' · ', $parts) : null;
@@ -162,31 +166,38 @@ class Planning extends Page implements HasTable
     private function assignmentAction(): Action
     {
         $people = User::where('active', true)->orderBy('name')->pluck('name', 'id')->all();
-        $driverOpts = User::where('active', true)->orderByDesc('is_driver')->orderBy('name')
-            ->get()->mapWithKeys(fn ($u) => [$u->id => $u->name . ($u->is_driver ? ' 🚗' : '')])->all();
         $vehicleOpts = Vehicle::where('active', true)->orderBy('name')->pluck('name', 'id')->all();
 
         return Action::make('assignment')
             ->label('Přiřadit')
             ->icon('heroicon-o-user-plus')
             ->color('primary')
-            ->modalHeading(fn (TripDay $record) => 'Přiřazení – ' . $record->trip?->name)
+            ->modalHeading(fn (TripDay $record) => 'Přiřazení – '.$record->trip?->name)
             ->modalDescription(fn (TripDay $record) => $record->date?->translatedFormat('l d.m.Y')
-                . ($record->meeting_time ? ' · sraz ' . substr((string) $record->meeting_time, 0, 5) : '')
-                . '  •  změny se ukládají automaticky')
+                .($record->meeting_time ? ' · sraz '.substr((string) $record->meeting_time, 0, 5) : '')
+                .'  •  změny se ukládají automaticky')
             ->modalWidth('7xl')
             ->modalSubmitAction(false)            // no "Save" – it saves continuously
             ->modalCancelActionLabel('Zavřít')
-            ->fillForm(fn (TripDay $record) => [
-                'trip_day_id' => $record->id,
-                'meeting_time' => $record->meeting_time,
-                'start_time' => $record->start_time,
-                'end_time' => $record->end_time,
-                'location_id' => $record->location_id,
-                'instructors' => $record->assignments->where('type', 'instructor')->pluck('user_id')->all(),
-                'drivers' => $record->assignments->where('type', 'driver')->pluck('user_id')->all(),
-                'vehicles' => $record->vehicles->pluck('id')->all(),
-            ])
+            ->fillForm(function (TripDay $record) {
+                // Already has a driver without the flag (historical/manual case)? Show the full
+                // list right away, so that person doesn't silently vanish from the checklist.
+                $this->showNonDriversForDay = $record->assignments()
+                    ->where('type', 'driver')
+                    ->whereHas('user', fn ($q) => $q->where('is_driver', false))
+                    ->exists();
+
+                return [
+                    'trip_day_id' => $record->id,
+                    'meeting_time' => $record->meeting_time,
+                    'start_time' => $record->start_time,
+                    'end_time' => $record->end_time,
+                    'location_id' => $record->location_id,
+                    'instructors' => $record->assignments->where('type', 'instructor')->pluck('user_id')->all(),
+                    'drivers' => $record->assignments->where('type', 'driver')->pluck('user_id')->all(),
+                    'vehicles' => $record->vehicles->pluck('id')->all(),
+                ];
+            })
             ->schema([
                 Hidden::make('trip_day_id'),
 
@@ -213,9 +224,18 @@ class Planning extends Page implements HasTable
                     ->live()->afterStateUpdated(fn (Get $get) => $this->saveAssignments($get)),
 
                 CheckboxList::make('drivers')->label('Řidiči (🚗 = má příznak „může řídit")')
-                    ->options($driverOpts)->columns(4)->gridDirection('row')
+                    ->options(fn () => $this->driverOptions($this->showNonDriversForDay))
+                    ->columns(4)->gridDirection('row')
                     ->searchable()->bulkToggleable()
                     ->live()->afterStateUpdated(fn (Get $get) => $this->saveAssignments($get)),
+
+                SchemaActions::make([
+                    Action::make('showNonDrivers')
+                        ->label('Zobrazit neřidiče')
+                        ->link()
+                        ->visible(fn () => ! $this->showNonDriversForDay)
+                        ->action(fn () => $this->showNonDriversForDay = true),
+                ]),
 
                 CheckboxList::make('vehicles')->label('Vozidla')
                     ->options($vehicleOpts)->columns(4)->gridDirection('row')
@@ -251,6 +271,19 @@ class Planning extends Page implements HasTable
                         ]),
                     ]),
             ]);
+    }
+
+    /**
+     * Options for the "Řidiči" checklist. By default only users flagged as able to drive –
+     * the rest are noise in the common case. $includeNonDrivers adds everyone else back in,
+     * for the "Zobrazit neřidiče" button and for days that already have such an exception.
+     */
+    public function driverOptions(bool $includeNonDrivers): array
+    {
+        return User::where('active', true)
+            ->when(! $includeNonDrivers, fn ($q) => $q->where('is_driver', true))
+            ->orderByDesc('is_driver')->orderBy('name')
+            ->get()->mapWithKeys(fn ($u) => [$u->id => $u->name.($u->is_driver ? ' 🚗' : '')])->all();
     }
 
     /** Continuous save of the day's times and location. */
@@ -309,10 +342,10 @@ class Planning extends Page implements HasTable
             $text = nl2br(e($n->text));
 
             return '<div class="py-1 border-b border-gray-100 dark:border-gray-700">'
-                . '<span class="text-xs text-gray-500">' . $who . ' · ' . $when . '</span><br>' . $text . '</div>';
+                .'<span class="text-xs text-gray-500">'.$who.' · '.$when.'</span><br>'.$text.'</div>';
         })->implode('');
 
-        return new HtmlString('<div class="space-y-1 text-sm">' . $html . '</div>');
+        return new HtmlString('<div class="space-y-1 text-sm">'.$html.'</div>');
     }
 
     protected function getHeaderActions(): array
@@ -335,7 +368,7 @@ class Planning extends Page implements HasTable
 
                     foreach ($instructors as $instructor) {
                         try {
-                            MailNotification::send($instructor, new InstructorTripsSummaryNotification());
+                            MailNotification::send($instructor, new InstructorTripsSummaryNotification);
                             $sent++;
                         } catch (Throwable $e) {
                             $failed[] = $instructor->email;
@@ -350,13 +383,13 @@ class Planning extends Page implements HasTable
                     if ($failed === []) {
                         FilamentNotification::make()->success()
                             ->title('Souhrnné e-maily odeslány')
-                            ->body('Počet instruktorů: ' . $sent)
+                            ->body('Počet instruktorů: '.$sent)
                             ->send();
                     } else {
                         FilamentNotification::make()->warning()
                             ->title('Část e-mailů se nepodařilo odeslat')
-                            ->body('Odesláno: ' . $sent . ' · Neodesláno: ' . count($failed)
-                                . ' (' . implode(', ', array_slice($failed, 0, 5)) . ')')
+                            ->body('Odesláno: '.$sent.' · Neodesláno: '.count($failed)
+                                .' ('.implode(', ', array_slice($failed, 0, 5)).')')
                             ->persistent()
                             ->send();
                     }
