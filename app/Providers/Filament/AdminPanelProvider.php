@@ -10,6 +10,7 @@ use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\Width;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -42,6 +43,9 @@ class AdminPanelProvider extends PanelProvider
             ->favicon(asset('favicon.png'))
             // The left menu can collapse on desktop into a narrow icon strip (less space).
             ->sidebarCollapsibleOnDesktop()
+            // Default is a centered max-w-7xl - too narrow for our widest tables (Poptávky, Trips).
+            // Full width everywhere; a page can still narrow itself via its own $maxContentWidth.
+            ->maxContentWidth(Width::Full)
             // Fixed menu group order (Provoz first – it's used the most day to day).
             ->navigationGroups([
                 NavigationGroup::make('Provoz'),
