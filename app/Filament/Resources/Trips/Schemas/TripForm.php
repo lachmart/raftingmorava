@@ -30,7 +30,8 @@ class TripForm
                         Select::make('type')->label('Typ výletu')->options(Trip::TYPES)
                             ->default('guided')->required()->live()
                             ->helperText('Akce s instruktorem = program + odměny. Půjčovna = cena z vybavení, bez instruktora.'),
-                        TextInput::make('name')->label('Název výletu')->required()->maxLength(255),
+                        TextInput::make('name')->label('Název výletu')->required()->maxLength(255)
+                            ->helperText('Předvyplní se z programu a klienta; lze upravit ručně.'),
 
                         Select::make('trip_program_id')
                             ->label('Program (ceník)')
@@ -43,6 +44,7 @@ class TripForm
                                     $set('instructor_reward', TripProgram::find($state)?->instructor_reward);
                                 }
                                 self::syncDateTo($get, $set);
+                                self::syncName($get, $set);
                             }),
                         TextInput::make('instructor_reward')->label('Odměna instruktora za výlet (Kč)')
                             ->numeric()->minValue(0)
@@ -67,7 +69,8 @@ class TripForm
                         Section::make('Klient')
                             ->columns(2)
                             ->schema([
-                                TextInput::make('client_name')->label('Jméno / organizace'),
+                                TextInput::make('client_name')->label('Jméno / organizace')
+                                    ->live()->afterStateUpdated(fn (Get $get, Set $set) => self::syncName($get, $set)),
                                 Select::make('customer_category')->label('Kategorie zákazníka')
                                     ->options(Trip::CUSTOMER_CATEGORIES),
                                 TextInput::make('client_email')->label('E-mail')->email(),
@@ -114,6 +117,30 @@ class TripForm
                         Toggle::make('price_manually_set')->label('Cena upravena ručně (nepřepočítávat)')->inline(false),
                     ]),
             ]);
+    }
+
+    /**
+     * Composes the "Program, Klient" trip-name suggestion out of whichever parts are present
+     * (either may be blank – e.g. a rental trip has no program). Null = nothing to fill in.
+     */
+    public static function composeName(?string $programName, ?string $clientName): ?string
+    {
+        $parts = array_filter([$programName, $clientName], fn (?string $v) => filled($v));
+
+        return $parts === [] ? null : implode(', ', $parts);
+    }
+
+    /** Re-composes "Název výletu" whenever the program or the client name changes. */
+    private static function syncName(Get $get, Set $set): void
+    {
+        $programId = $get('trip_program_id');
+        $programName = $programId ? TripProgram::find($programId)?->name : null;
+
+        $composed = self::composeName($programName, $get('client_name'));
+
+        if ($composed !== null) {
+            $set('name', $composed);
+        }
     }
 
     /** Derives "termín do" from "termín od" + the program's number of days (guided trips only). */

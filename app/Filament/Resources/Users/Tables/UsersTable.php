@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Tables;
 
+use App\Models\User;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -22,7 +23,8 @@ class UsersTable
                     ->searchable(),
                 TextColumn::make('phone')->label('Telefon')
                     ->searchable(),
-                TextColumn::make('roles.name')->label('Role')->badge(),
+                TextColumn::make('roles.name')->label('Role')->badge()
+                    ->formatStateUsing(fn (string $state) => User::ROLE_LABELS[$state] ?? $state),
                 IconColumn::make('active')->label('Aktivní')
                     ->boolean(),
                 TextColumn::make('email_verified_at')

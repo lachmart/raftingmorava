@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Schemas;
 
+use App\Models\User;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -29,6 +30,7 @@ class UserForm
                         Select::make('roles')
                             ->label('Role')
                             ->relationship('roles', 'name')
+                            ->getOptionLabelFromRecordUsing(fn ($record) => User::ROLE_LABELS[$record->name] ?? $record->name)
                             ->preload()
                             ->required()
                             ->helperText('Superadmin: vše. Admin: provoz bez číselníků/uživatelů/žebříčku. Instruktor: portál.'),

@@ -18,7 +18,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, HasRoles, Notifiable;
 
     protected function casts(): array
     {
@@ -29,6 +29,14 @@ class User extends Authenticatable implements FilamentUser
             'is_driver' => 'boolean',
         ];
     }
+
+    // Role names stay English in the DB (Spatie role slugs used throughout the app's hasRole()
+    // checks) – this is display-only, for the Users table and the role picker.
+    public const ROLE_LABELS = [
+        'Superadmin' => 'Superadmin',
+        'Admin' => 'Admin',
+        'Instructor' => 'Instruktor',
+    ];
 
     /**
      * Any active user with one of the roles can access the admin panel.
