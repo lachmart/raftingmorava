@@ -68,7 +68,7 @@
         <x-filament::section>
             <x-slot name="heading">Plánování (pondělní schůze)</x-slot>
             <ul style="{{ $ulStyle }}">
-                <li style="{{ $liStyle }}">Tabulka nadcházejících dnů výletů (6 týdnů dopředu).</li>
+                <li style="{{ $liStyle }}">Tabulka dnů výletů – ve výchozím stavu <strong>14 dní dopředu</strong>. Ve filtru <em>„Od–Do"</em> si zvolíš libovolné období, i zpětně.</li>
                 <li style="{{ $liStyle }}"><strong>Klikni na řádek</strong> → otevře se mřížka pro přiřazení <em>instruktorů, řidičů a vozidel</em> + úprava časů (sraz/start/konec) a nástupního místa.</li>
                 <li style="{{ $liStyle }}">Vše se ukládá <strong>průběžně</strong> – není potřeba nic potvrzovat.</li>
                 <li style="{{ $liStyle }}">Dole v okně přidáváš <strong>poznámky ke dni</strong>.</li>

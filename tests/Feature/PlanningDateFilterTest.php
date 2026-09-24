@@ -68,6 +68,25 @@ class PlanningDateFilterTest extends TestCase
             ->assertCanNotSeeTableRecords([$cancelled]);
     }
 
+    public function test_unassigned_deep_link_shows_six_weeks_of_unassigned_days(): void
+    {
+        $unassignedIn20 = $this->makeDay(20);
+        $assignedIn20 = $this->makeDay(20);
+        $assignedIn20->assignments()->create([
+            'user_id' => User::factory()->create()->id,
+            'type' => 'instructor',
+        ]);
+
+        // Mirrors StatsOverview's "Nepřiřazené" link.
+        $url = \App\Filament\Widgets\StatsOverview::unassignedPlanningUrl();
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+
+        Livewire::withQueryParams($query)
+            ->test(Planning::class)
+            ->assertCanSeeTableRecords([$unassignedIn20])
+            ->assertCanNotSeeTableRecords([$assignedIn20]);
+    }
+
     private function makeDay(int $offsetDays, string $status = 'planned'): TripDay
     {
         $date = Carbon::today()->addDays($offsetDays)->toDateString();

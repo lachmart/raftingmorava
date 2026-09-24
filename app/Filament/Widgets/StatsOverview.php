@@ -24,6 +24,18 @@ class StatsOverview extends BaseWidget
         return auth()->user()?->hasAnyRole(['Superadmin', 'Admin']) ?? false;
     }
 
+    /** Planning filtered to unassigned days over the same 6-week window this stat counts. */
+    public static function unassignedPlanningUrl(): string
+    {
+        return Planning::getUrl(['filters' => [
+            'unassigned' => ['isActive' => true],
+            'date_range' => [
+                'from' => Carbon::today()->toDateString(),
+                'until' => Carbon::today()->addWeeks(6)->toDateString(),
+            ],
+        ]]);
+    }
+
     protected function getStats(): array
     {
         $today = Carbon::today()->toDateString();
@@ -59,7 +71,7 @@ class StatsOverview extends BaseWidget
                 ->description('Dny s instruktorem bez instruktora')
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
                 ->color($unassigned > 0 ? 'warning' : 'success')
-                ->url(Planning::getUrl(['filters' => ['unassigned' => ['isActive' => true]]])),
+                ->url(self::unassignedPlanningUrl()),
 
             Stat::make('Nové poptávky', $newInquiries)
                 ->description('Čekají na zpracování')
