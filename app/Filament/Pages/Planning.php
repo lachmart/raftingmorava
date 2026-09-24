@@ -14,6 +14,7 @@ use App\Notifications\InstructorTripsSummaryNotification;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
@@ -85,10 +86,9 @@ class Planning extends Page implements HasTable
                 TripDay::query()
                     ->with(['trip' => fn ($q) => $q->withCount('days'), 'location', 'vehicles', 'assignments.user'])
                     ->whereHas('trip', fn ($q) => $q->where('status', '!=', 'cancelled'))
-                    ->whereBetween('date', [Carbon::today()->toDateString(), Carbon::today()->addWeeks(6)->toDateString()])
             )
             ->defaultSort('date')
-            ->heading('Nadcházející dny výletů (6 týdnů)')
+            ->heading('Dny výletů')
             ->description('Klikni na řádek → otevře se mřížka pro přiřazení. Vše se ukládá průběžně (není potřeba nic potvrzovat).')
             ->recordAction('assignment') // clicking anywhere on a row opens the modal
             ->columns([
@@ -138,6 +138,30 @@ class Planning extends Page implements HasTable
                     ->badge()->color('gray')->listWithLineBreaks(),
             ])
             ->filters([
+                // Date range instead of a fixed window: defaults to the next 14 days,
+                // but any period (including the past) can be picked.
+                Filter::make('date_range')
+                    ->schema([
+                        DatePicker::make('from')->label('Od')->native(false)->displayFormat('d.m.Y')
+                            ->default(fn () => Carbon::today()->toDateString()),
+                        DatePicker::make('until')->label('Do')->native(false)->displayFormat('d.m.Y')
+                            ->default(fn () => Carbon::today()->addDays(14)->toDateString()),
+                    ])
+                    ->columns(2)
+                    ->query(fn ($query, array $data) => $query
+                        ->when($data['from'] ?? null, fn ($q, $v) => $q->whereDate('date', '>=', $v))
+                        ->when($data['until'] ?? null, fn ($q, $v) => $q->whereDate('date', '<=', $v)))
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['from'] ?? null) {
+                            $indicators['from'] = 'Od '.Carbon::parse($data['from'])->format('d.m.Y');
+                        }
+                        if ($data['until'] ?? null) {
+                            $indicators['until'] = 'Do '.Carbon::parse($data['until'])->format('d.m.Y');
+                        }
+
+                        return $indicators;
+                    }),
                 Filter::make('unassigned')->label('Jen nepřiřazené (bez instruktora)')
                     ->query(fn ($query) => $query
                         ->whereHas('trip', fn ($q) => $q->where('type', 'guided'))
