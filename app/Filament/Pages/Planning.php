@@ -148,6 +148,12 @@ class Planning extends Page implements HasTable
                             ->default(fn () => Carbon::today()->addDays(14)->toDateString()),
                     ])
                     ->columns(2)
+                    // Removing an indicator chip (or "remove all") falls back to the defaults
+                    // instead of an unbounded range that would start with years-old trips.
+                    ->resetState(fn () => [
+                        'from' => Carbon::today()->toDateString(),
+                        'until' => Carbon::today()->addDays(14)->toDateString(),
+                    ])
                     ->query(fn ($query, array $data) => $query
                         ->when($data['from'] ?? null, fn ($q, $v) => $q->whereDate('date', '>=', $v))
                         ->when($data['until'] ?? null, fn ($q, $v) => $q->whereDate('date', '<=', $v)))

@@ -32,6 +32,29 @@ class PlanningDateFilterTest extends TestCase
             ->assertCanNotSeeTableRecords([$yesterday, $in20]);
     }
 
+    public function test_removing_range_indicators_falls_back_to_the_default_14_days(): void
+    {
+        $yesterday = $this->makeDay(-1);
+        $in20 = $this->makeDay(20);
+        $wide = [
+            'from' => Carbon::today()->subDays(7)->toDateString(),
+            'until' => Carbon::today()->addDays(30)->toDateString(),
+        ];
+
+        // Removing one chip resets only that side to its default.
+        Livewire::test(Planning::class)
+            ->filterTable('date_range', $wide)
+            ->removeTableFilter('date_range', 'from')
+            ->assertCanSeeTableRecords([$in20])
+            ->assertCanNotSeeTableRecords([$yesterday]);
+
+        // "Remove all filters" goes back to the full default window.
+        Livewire::test(Planning::class)
+            ->filterTable('date_range', $wide)
+            ->removeTableFilters()
+            ->assertCanNotSeeTableRecords([$yesterday, $in20]);
+    }
+
     public function test_from_in_the_past_shows_past_days(): void
     {
         $yesterday = $this->makeDay(-1);

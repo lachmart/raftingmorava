@@ -26,6 +26,7 @@ jde nastavit libovolné období včetně minulosti.
   - Query: `->when($data['from'], whereDate('date', '>=', …))` a
     `->when($data['until'], whereDate('date', '<=', …))`. Prázdné pole znamená, že na té straně
     rozsah není omezený.
+  - `resetState()` = stejné výchozí hodnoty: zrušení štítku „Od“/„Do“ nad tabulkou (nebo všech filtrů) vrátí výchozích 14 dní, ne neomezený rozsah (jinak by první stránka začínala roky starými výlety).
   - `indicateUsing()` zobrazí aktivní rozsah jako indikátor nad tabulkou
     (např. „Od 24.09.2026“, „Do 08.10.2026“), aby bylo vždy vidět, jaké období je zrovna vidět.
 - Nadpis tabulky: „Dny výletů“ (bez „Nadcházející“ a „(6 týdnů)“).
