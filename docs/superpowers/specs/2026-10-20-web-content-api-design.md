@@ -67,7 +67,7 @@ Interní pole (odměny, interní název, klienti) se nepřekládají a do API ni
 | `title` | JSON | veřejný název (interní `name` zůstává pro ceník) |
 | `slug` | JSON | unikátní v rámci jazyka |
 | `perex` | JSON | krátký text na kartu |
-| `description` | JSON | rich text |
+| `description_web` | JSON | rich text; `description` už existuje jako interní poznámka ceníku. API ho vrací jako `description` |
 | `price_note` | JSON | rozpad ceny („290 Kč rafting + 330 Kč lanové centrum“) |
 | `duration_label` | JSON, nullable | „2,5 + 3 h“; prázdné → API spočte z `duration_minutes` / `number_of_days` |
 | `itinerary` | JSON | pole `{time, text: {cs, en}}` |
@@ -139,7 +139,6 @@ Superadmin projde přes `Gate::before`).
 - **„Publikovat web“:** tlačítko v hlavičce stránek skupiny Web + ukazatel
   „Neodeslané změny od posledního publikování“ (`content_version > published_version`).
   Spustí webhook (viz 3.4). Webhook se **nevolá automaticky po každém uložení**.
-- **„Importovat z WordPressu“:** tlačítko na stránce Nastavení webu (viz 5.1).
 
 ## 3. API
 
@@ -247,19 +246,10 @@ Přidání pole není nekompatibilní změna.
 
 ## 4. Převod obsahu z WordPressu
 
-Akce **„Importovat z WordPressu“** (Superadmin, Nastavení webu):
-
-- Čte `https://raftingmorava.cz/wp-json/wp/v2/…` (programy – custom post type výletů, příspěvky
-  blogu, stránky, případně ACF pole, pokud je REST vrací).
-- **Idempotentní:** páruje podle slugu; programy navíc podle přesného titulku na `TripProgram.name`
-  (dnešní párování poptávek to zaručuje). Opakované spuštění nic nezduplikuje.
-- Fotky stáhne do `public/uploads` (bez zmenšování na serveru – převezme velikost z WP, nebo
-  vybere menší variantu z `media_details.sizes`).
-- Příspěvky blogu → `news` s `old_url` (pro `/redirects`).
-- Kvůli limitu doby běhu na hostingu zpracovává po dávkách (parametr stránky REST), tlačítko lze
-  pustit znovu a pokračuje.
-- Co REST nevrací, se doplní ručně. Import nikdy nepřepíše pole, které už bylo v systému
-  ručně upravené (`updated_at` > čas importu záznamu).
+**Bez importu** – REST API současného WordPressu blokuje iThemes Security (`401
+itsec_rest_api_access_restricted`) a uživatel zvolil ruční přepis obsahu. Slugy programů
+a stránek se při přepisu zadají stejné jako na dnešním webu (zachování URL). Staré URL blogu
+se zadají ručně do `news.old_url`.
 
 ## 5. Nasazení
 
@@ -283,14 +273,13 @@ Feature testy (PHPUnit, SQLite):
   e-mail kanceláři (`Notification::fake`), duplicity;
 - převod poptávky: `lang` a položky půjčovny se přenesou; zákaznický e-mail použije `_en` šablonu;
 - webhook: podpis HMAC, úspěch posune `published_version`, chyba ne (`Http::fake`);
-- import z WP: idempotence a párování (`Http::fake` s ukázkovými odpověďmi REST).
 
 ## 7. Etapy
 
 Každá etapa je samostatně nasaditelná a má vlastní implementační plán.
 
 1. **Obsah v systému** – překladový trait, migrace (rozšíření + nové tabulky, převod kategorií),
-   disk `uploads`, sekce Web ve Filamentu, `content_version`, import z WordPressu.
+   disk `uploads`, sekce Web ve Filamentu, `content_version`, odkazy „Zobrazit na webu“.
 2. **API ke čtení** – všechny `GET` endpointy, JsonResources, cache + ETag, CORS, rate limit,
    `/sitemap`, `/redirects`, tlačítko „Publikovat web“ + webhook.
 3. **Poptávky** – `POST /api/v1/inquiries`, e-mail kanceláři, `lang` na poptávce a výletu,
