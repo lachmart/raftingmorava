@@ -32,9 +32,11 @@
 
             <h3 style="{{ $h3Style }}">Co je na kartě výletu</h3>
             <ul style="{{ $ulStyle }}">
-                <li style="{{ $liStyle }}">Datum a <strong>čas srazu</strong>.</li>
-                <li style="{{ $liStyle }}">📍 Nástupní místo (kde se sraz koná).</li>
+                <li style="{{ $liStyle }}">Datum (u vícedenního výletu i <em>den X/Y</em> a celý termín) a 🕘 časy <strong>srazu, startu a konce</strong>.</li>
+                <li style="{{ $liStyle }}">📍 Úsek dne – nástupní místo → výstupní místo.</li>
                 <li style="{{ $liStyle }}">🚐 Přidělená vozidla.</li>
+                <li style="{{ $liStyle }}">🏫 Pro koho výlet je (škola / zákazník), 👥 počty (platící, doprovod, věk dětí) a 📞 kontakt na učitele / zákazníka.</li>
+                <li style="{{ $liStyle }}">🧑‍🤝‍🧑 S kým ten den jedeš (ostatní instruktoři a řidiči).</li>
                 <li style="{{ $liStyle }}">Tvoje role (instruktor / řidič) a 💰 <strong>tvoje odměna</strong> se stavem <em>vyplaceno / zatím nevyplaceno</em>.</li>
             </ul>
 
@@ -47,6 +49,7 @@
             <h3 style="{{ $h3Style }}">Poznámky a e-maily</h3>
             <ul style="{{ $ulStyle }}">
                 <li style="{{ $liStyle }}">Tlačítkem <strong>„Přidat poznámku"</strong> nahoře napíšeš poznámku ke konkrétnímu výletu (vidí ji provoz).</li>
+                <li style="{{ $liStyle }}">V menu <strong>Kalendář</strong> vidíš svoje výlety po měsících a také <strong>schůze</strong>.</li>
                 <li style="{{ $liStyle }}">E-mailem přijde <strong>souhrn</strong> nadcházejících výletů a <strong>připomínka den předem</strong>.</li>
             </ul>
         </x-filament::section>
@@ -60,7 +63,7 @@
                 <li style="{{ $liStyle }}">Poptávky chodí z webu (formulář) i je lze zadat ručně. Nové mají v menu odznak s počtem.</li>
                 <li style="{{ $liStyle }}">Akce <strong>„Převést na výlet"</strong>: potvrdíš <em>typ, program, termín od, čas startu</em> a počet platících.</li>
                 <li style="{{ $liStyle }}"><strong>Termín do</strong> se dopočítá z počtu dní programu; <strong>sraz</strong> a <strong>konec</strong> dne 1 z hodnot programu (sraz = start − offset, konec = start + délka trvání).</li>
-                <li style="{{ $liStyle }}">Nástupní místa se přiřadí na jednotlivé dny podle pořadí.</li>
+                <li style="{{ $liStyle }}">Nástupní a výstupní místa se přiřadí na jednotlivé dny podle pořadí.</li>
                 <li style="{{ $liStyle }}">Zákazníkovi se <strong>automaticky odešle potvrzovací e-mail</strong> (obsahuje start, ne sraz).</li>
             </ul>
         </x-filament::section>
@@ -69,7 +72,7 @@
             <x-slot name="heading">Plánování (pondělní schůze)</x-slot>
             <ul style="{{ $ulStyle }}">
                 <li style="{{ $liStyle }}">Tabulka dnů výletů – ve výchozím stavu <strong>14 dní dopředu</strong>. Ve filtru <em>„Od–Do"</em> si zvolíš libovolné období, i zpětně.</li>
-                <li style="{{ $liStyle }}"><strong>Klikni na řádek</strong> → otevře se mřížka pro přiřazení <em>instruktorů, řidičů a vozidel</em> + úprava časů (sraz/start/konec) a nástupního místa.</li>
+                <li style="{{ $liStyle }}"><strong>Klikni na řádek</strong> → otevře se mřížka pro přiřazení <em>instruktorů, řidičů a vozidel</em> + úprava časů (sraz/start/konec) a úseku (nástupní a výstupní místo).</li>
                 <li style="{{ $liStyle }}">Vše se ukládá <strong>průběžně</strong> – není potřeba nic potvrzovat.</li>
                 <li style="{{ $liStyle }}">Dole v okně přidáváš <strong>poznámky ke dni</strong>.</li>
                 <li style="{{ $liStyle }}">Filtr <em>„Jen nepřiřazené"</em> ukáže výlety bez instruktora.</li>
@@ -80,13 +83,27 @@
         <x-filament::section>
             <x-slot name="heading">Výlety</x-slot>
             <ul style="{{ $ulStyle }}">
+                <li style="{{ $liStyle }}">Seznam má <strong>řádek pro každý den výletu</strong> – třídenní výlet je tam třikrát (<em>den 1/3, 2/3, 3/3</em>) i s úsekem a časem daného dne, ať je vidět, že program pokračuje. Statistiky, odměny a vyúčtování ho pořád počítají jako jeden výlet.</li>
+                <li style="{{ $liStyle }}">Ve výchozím stavu ukazuje dny <strong>od dneška dál, nejbližší nahoře</strong>. Filtrem <em>„Termín od–do"</em> zobrazíš libovolné období včetně historie. Proběhlé dny jsou ztlumené.</li>
+                <li style="{{ $liStyle }}"><strong>Smazat</strong> u vícedenního výletu se zeptá, zda smazat celý výlet, nebo jen ten den (termín výletu se pak sám zkrátí). Hromadné mazání maže vždy celé výlety.</li>
+                <li style="{{ $liStyle }}">Zvolené řazení a filtry si seznam pamatuje, dokud se neodhlásíš. Sloupce lze skrýt a přeskládat (ikona sloupců nad tabulkou).</li>
+                <li style="{{ $liStyle }}"><strong>Změna termínu</strong> posune i dny výletu (časy, místa a lidé zůstanou podle pořadí dne). Při zkrácení se přebývající dny smažou. Výlet může mít nejvýš 31 dní.</li>
                 <li style="{{ $liStyle }}">Detail výletu obsahuje formulář (typ, program, termín, klient, <em>vyúčtování</em>, u půjčovny vybavení) a záložky:</li>
-                <li style="{{ $liStyle }}"><strong>Dny výletu</strong> – přiřazení, časy, nástupní místo, vozidla (jako v plánování).</li>
+                <li style="{{ $liStyle }}"><strong>Dny výletu</strong> – přiřazení, časy, nástupní a výstupní místo, vozidla (jako v plánování).</li>
                 <li style="{{ $liStyle }}"><strong>Poznámky</strong> – komentářové vlákno.</li>
                 @if ($this->isSuperadmin())
                     <li style="{{ $liStyle }}"><strong>Historie změn (audit)</strong> – kdo co kdy změnil (jen Superadmin).</li>
                 @endif
                 <li style="{{ $liStyle }}"><strong>Typy:</strong> „Akce s instruktorem" (program + odměny) nebo „Půjčovna" (cena = vybavení × dny, bez instruktora; ruční přepis ceny vypne automatický přepočet).</li>
+            </ul>
+        </x-filament::section>
+
+        <x-filament::section>
+            <x-slot name="heading">Kalendář a schůze</x-slot>
+            <ul style="{{ $ulStyle }}">
+                <li style="{{ $liStyle }}"><strong>Kalendář</strong> ukazuje dny výletů po měsících. Zaškrtnutím <em>„Jen moje výlety"</em> uvidíš jen ty, kde jsi přiřazený(á).</li>
+                <li style="{{ $liStyle }}"><strong>Schůze</strong> zakládáš v menu Provoz → Schůze (název, datum, čas, místo, poznámka). V kalendáři je vidí všichni včetně instruktorů.</li>
+                <li style="{{ $liStyle }}">Instruktoři v kalendáři vidí jen svoje výlety.</li>
             </ul>
         </x-filament::section>
 
@@ -112,14 +129,14 @@
                 <li style="{{ $liStyle }}"><strong>Počet dní</strong> – určuje délku výletu (termín do).</li>
                 <li style="{{ $liStyle }}"><strong>Délka trvání (min)</strong> – z ní se dopočítá konec (start + trvání).</li>
                 <li style="{{ $liStyle }}"><strong>Sraz před startem (min)</strong> – z něj se dopočítá sraz (start − minuty). Výchozí 50.</li>
-                <li style="{{ $liStyle }}"><strong>Nástupní místa po dnech</strong> – start každého dne (přiřadí se při převodu poptávky).</li>
+                <li style="{{ $liStyle }}"><strong>Úseky po dnech</strong> – nástupní a výstupní místo každého dne (přiřadí se při převodu poptávky / založení výletu).</li>
                 <li style="{{ $liStyle }}">⚠️ <strong>Název musí přesně odpovídat titulku stránky výletu na webu</strong> – podle něj se párují poptávky z formuláře.</li>
             </ul>
 
             <h3 style="{{ $h3Style }}">Další číselníky</h3>
             <ul style="{{ $ulStyle }}">
                 <li style="{{ $liStyle }}"><strong>Vybavení (půjčovna)</strong> – cena za den/kus.</li>
-                <li style="{{ $liStyle }}"><strong>Lokace</strong> – seznam nástupních míst (název + aktivní).</li>
+                <li style="{{ $liStyle }}"><strong>Lokace</strong> – seznam nástupních a výstupních míst (název + aktivní).</li>
                 <li style="{{ $liStyle }}"><strong>Vozidla</strong> – název, SPZ, kapacita.</li>
             </ul>
 
@@ -137,8 +154,8 @@
         <x-slot name="heading">Role a oprávnění</x-slot>
         <ul style="{{ $ulStyle }}">
             <li style="{{ $liStyle }}"><strong>Superadmin</strong> – vše: provoz i číselníky, uživatelé, šablony, žebříček, audit.</li>
-            <li style="{{ $liStyle }}"><strong>Admin</strong> – provoz (výlety, poptávky, plánování, platby). Nemá číselníky, uživatele ani žebříček.</li>
-            <li style="{{ $liStyle }}"><strong>Instruktor</strong> – jen svůj portál „Moje výlety".</li>
+            <li style="{{ $liStyle }}"><strong>Admin</strong> – provoz (výlety, poptávky, plánování, kalendář, schůze, platby). Nemá číselníky, uživatele ani žebříček.</li>
+            <li style="{{ $liStyle }}"><strong>Instruktor</strong> – svůj portál „Moje výlety" a kalendář se svými výlety a schůzemi.</li>
         </ul>
     </x-filament::section>
 </x-filament-panels::page>

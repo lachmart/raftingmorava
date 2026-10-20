@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Trips\RelationManagers;
 
+use App\Filament\Resources\Trips\TripResource;
+use App\Models\TripDay;
 use App\Models\User;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
@@ -35,21 +37,27 @@ class DaysRelationManager extends RelationManager
         return $schema
             ->columns(1) // single column – sections stacked
             ->components([
+                // Rows: date + order + vehicles / boarding → exit point / sraz, start, konec.
                 Section::make('Den')
-                    ->columns(3)
+                    ->columns(6)
                     ->schema([
-                        DatePicker::make('date')->label('Datum')->required()->native(false)->displayFormat('d.m.Y'),
-                        TextInput::make('order')->label('Pořadí dne')->numeric()->default(1)->minValue(1)->required(),
-                        Select::make('location_id')->label('Lokace (místo srazu)')
-                            ->relationship('location', 'name', fn ($query) => $query->where('active', true))->searchable()->preload()
-                            ->createOptionForm([TextInput::make('name')->label('Název lokace')->required()]),
-
-                        TimePicker::make('meeting_time')->label('Čas srazu')->seconds(false),
-                        TimePicker::make('start_time')->label('Čas začátku')->seconds(false),
-                        TimePicker::make('end_time')->label('Čas konce')->seconds(false),
-
+                        DatePicker::make('date')->label('Datum')->required()->native(false)->displayFormat('d.m.Y')->columnSpan(2),
+                        TextInput::make('order')->label('Pořadí dne')->numeric()->default(1)->minValue(1)->required()->columnSpan(1),
                         Select::make('vehicles')->label('Vozidla')
-                            ->multiple()->relationship('vehicles', 'name')->searchable()->preload()->columnSpanFull(),
+                            ->multiple()->relationship('vehicles', 'name')->searchable()->preload()->columnSpan(3),
+
+                        Select::make('location_id')->label('Nástupní místo')
+                            ->relationship('location', 'name', fn ($query) => $query->where('active', true))->searchable()->preload()
+                            ->createOptionForm([TextInput::make('name')->label('Název lokace')->required()])
+                            ->columnSpan(3),
+                        Select::make('end_location_id')->label('Výstupní místo')
+                            ->relationship('endLocation', 'name', fn ($query) => $query->where('active', true))->searchable()->preload()
+                            ->createOptionForm([TextInput::make('name')->label('Název lokace')->required()])
+                            ->columnSpan(3),
+
+                        TimePicker::make('meeting_time')->label('Čas srazu')->seconds(false)->columnSpan(2),
+                        TimePicker::make('start_time')->label('Čas začátku')->seconds(false)->columnSpan(2),
+                        TimePicker::make('end_time')->label('Čas konce')->seconds(false)->columnSpan(2),
                     ]),
 
                 Section::make('Instruktoři')
@@ -95,7 +103,7 @@ class DaysRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn ($query) => $query->with(['location', 'vehicles', 'assignments.user']))
+            ->modifyQueryUsing(fn ($query) => $query->with(['location', 'endLocation', 'vehicles', 'assignments.user']))
             ->recordTitleAttribute('date')
             ->recordTitle(fn ($record) => 'Den ' . $record->order . ' – ' . $record->date?->format('d.m.Y'))
             ->recordAction('edit') // clicking a row opens the day editor
@@ -124,7 +132,8 @@ class DaysRelationManager extends RelationManager
                         );
                     })
                     ->sortable(),
-                TextColumn::make('location.name')->label('Lokace')->placeholder('—'),
+                TextColumn::make('section')->label('Úsek')->wrap()
+                    ->state(fn ($record) => $record->sectionLabel())->placeholder('—'),
                 TextColumn::make('instructors')->label('Instruktoři')
                     ->state(fn ($record) => $record->assignments->where('type', 'instructor')->map(fn ($a) => $a->user?->name)->filter()->values()->all())
                     ->listWithLineBreaks()->placeholder('—'),
@@ -140,7 +149,11 @@ class DaysRelationManager extends RelationManager
             ])
             ->recordActions([
                 EditAction::make()->modalWidth('4xl'),
-                DeleteAction::make(),
+                // Through the trip, so its dates shrink to the remaining days. Then reload the page –
+                // otherwise the trip form above still holds the old dates and saving it would re-add the day.
+                DeleteAction::make()
+                    ->using(fn (TripDay $record) => $record->trip->removeDay($record))
+                    ->after(fn () => $this->redirect(TripResource::getUrl('edit', ['record' => $this->getOwnerRecord()]))),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

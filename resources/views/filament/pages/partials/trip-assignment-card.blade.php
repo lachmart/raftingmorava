@@ -3,19 +3,77 @@
 <x-filament::section>
     <div class="flex items-start justify-between gap-3">
         <div>
-            <div class="text-base font-semibold">{{ $day->trip?->name }}</div>
+            @php($trip = $day->trip)
+            @php($dayCount = $trip?->days->count() ?? 1)
+            @php($hm = fn ($t) => \Illuminate\Support\Str::of($t)->substr(0, 5))
+            <div class="text-base font-semibold">{{ $trip?->name }}</div>
             <div class="text-sm text-gray-500 dark:text-gray-400">
                 {{ $day->date?->translatedFormat('l d.m.Y') }}
-                @if ($day->meeting_time)
-                    · sraz {{ \Illuminate\Support\Str::of($day->meeting_time)->substr(0, 5) }}
+                @if ($dayCount > 1)
+                    · den {{ $day->order }}/{{ $dayCount }}
+                    ({{ $trip->date_from?->format('d.m.') }}–{{ $trip->date_to?->format('d.m.Y') }})
                 @endif
             </div>
-            @if ($day->location)
-                <div class="text-sm mt-1">📍 {{ $day->location->name }}</div>
+            {{-- Times of this day: when to meet, when it starts, when it should end. --}}
+            @if ($day->meeting_time || $day->start_time || $day->end_time)
+                <div class="text-sm mt-1">
+                    🕘
+                    {{ collect([
+                        $day->meeting_time ? 'sraz '.$hm($day->meeting_time) : null,
+                        $day->start_time ? 'start '.$hm($day->start_time) : null,
+                        $day->end_time ? 'konec '.$hm($day->end_time) : null,
+                    ])->filter()->implode(' · ') }}
+                </div>
+            @endif
+            @if ($day->sectionLabel())
+                <div class="text-sm mt-1">📍 {{ $day->sectionLabel() }}</div>
             @endif
             @if ($day->vehicles->isNotEmpty())
                 <div class="text-sm mt-1">🚐 {{ $day->vehicles->pluck('name')->join(', ') }}</div>
             @endif
+
+            {{-- Who the trip is for: school/customer, group size and ages, contacts. --}}
+            @if ($trip?->client_name)
+                <div class="text-sm mt-1">🏫 {{ $trip->client_name }}</div>
+            @endif
+            @if ($trip?->planned_paying_count || $trip?->planned_escort_count || $trip?->children_ages)
+                <div class="text-sm mt-1">
+                    👥
+                    {{ collect([
+                        $trip->planned_paying_count ? $trip->planned_paying_count.' platících' : null,
+                        $trip->planned_escort_count ? $trip->planned_escort_count.' doprovod' : null,
+                        $trip->children_ages ? 'věk '.$trip->children_ages : null,
+                    ])->filter()->implode(' · ') }}
+                </div>
+            @endif
+            @if ($trip?->client_phone || $trip?->onsite_phone || $trip?->client_email)
+                <div class="text-sm mt-1">
+                    📞
+                    @if ($trip->onsite_phone)
+                        <a href="tel:{{ preg_replace('/\s+/', '', $trip->onsite_phone) }}" class="text-primary-600 underline dark:text-primary-400">{{ $trip->onsite_phone }}</a> (na místě)
+                    @endif
+                    @if ($trip->client_phone && $trip->client_phone !== $trip->onsite_phone)
+                        @if ($trip->onsite_phone) · @endif
+                        <a href="tel:{{ preg_replace('/\s+/', '', $trip->client_phone) }}" class="text-primary-600 underline dark:text-primary-400">{{ $trip->client_phone }}</a>
+                    @endif
+                    @if ($trip->client_email)
+                        @if ($trip->onsite_phone || $trip->client_phone) · @endif
+                        <a href="mailto:{{ $trip->client_email }}" class="text-primary-600 underline dark:text-primary-400">{{ $trip->client_email }}</a>
+                    @endif
+                </div>
+            @endif
+
+            {{-- Who else goes this day (one line per person, with their role(s)). --}}
+            @php($crew = $day->assignments->where('user_id', '!=', $a->user_id)->groupBy('user_id'))
+            @if ($crew->isNotEmpty())
+                <div class="text-sm mt-1">
+                    🧑‍🤝‍🧑 Jedou s tebou:
+                    {{ $crew->map(fn ($rows) => $rows->first()->user?->name
+                        .' ('.$rows->map(fn ($r) => mb_strtolower(\App\Models\TripDayAssignment::TYPES[$r->type] ?? $r->type))->unique()->implode(', ').')')
+                        ->implode(', ') }}
+                </div>
+            @endif
+
             {{-- The instructor sees THEIR OWN reward (not others', not the leaderboard). --}}
             <div class="text-sm mt-1">
                 💰 Odměna: <strong>{{ number_format((float) ($a->reward ?? 0), 0, ',', ' ') }} Kč</strong>

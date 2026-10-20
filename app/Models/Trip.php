@@ -108,6 +108,9 @@ class Trip extends Model
         $this->saveQuietly();
     }
 
+    /** Longest allowed trip, in days – guards against typos like 16.7.2026–16.7.2027 (366 days). */
+    public const MAX_DAYS = 31;
+
     /**
      * Creates one TripDay per calendar day between date_from and date_to (inclusive), using the
      * program's day-location template where available. No-op if the trip already has days, so it's
@@ -119,22 +122,82 @@ class Trip extends Model
             return;
         }
 
-        $from = $this->date_from;
-        $to = $this->date_to ?? $from;
+        $this->syncDays();
+    }
 
-        $dayLocations = $this->program
-            ? $this->program->programDays()->pluck('location_id', 'order')
+    /**
+     * Brings the trip days in line with date_from/date_to after the dates were changed: day N
+     * moves to date_from + (N-1) and keeps its times, places, people and vehicles; missing days
+     * are created (with the program's day template), days beyond the new length are deleted.
+     *
+     * @return int how many of the deleted days had someone assigned (so the caller can warn)
+     */
+    public function syncDays(): int
+    {
+        if (! $this->date_from) {
+            return 0;
+        }
+
+        $from = $this->date_from->copy();
+        $to = $this->date_to && $this->date_to->gte($from) ? $this->date_to : $from;
+        $length = (int) $from->diffInDays($to) + 1;
+
+        $template = $this->program
+            ? $this->program->programDays()->get()->keyBy('order')
             : collect();
 
-        $order = 1;
-        for ($date = $from->copy(); $date->lte($to); $date->addDay()) {
-            $this->days()->create([
-                'date' => $date->toDateString(),
-                'order' => $order,
-                'location_id' => $dayLocations[$order] ?? null,
-            ]);
-            $order++;
+        $days = $this->days()->withCount('assignments')->get()->values();
+
+        // Excess days go first, so re-dating the rest can never collide with them.
+        $excess = $days->slice($length);
+        $removedWithPeople = $excess->where('assignments_count', '>', 0)->count();
+        $excess->each(fn (TripDay $day) => $day->delete());
+
+        for ($order = 1; $order <= $length; $order++) {
+            $date = $from->copy()->addDays($order - 1)->toDateString();
+            $day = $days->get($order - 1);
+
+            if ($day) {
+                // Renumber too – manually added days may have left gaps in the order.
+                $day->update(['date' => $date, 'order' => $order]);
+            } else {
+                $this->days()->create([
+                    'date' => $date,
+                    'order' => $order,
+                    'location_id' => $template->get($order)?->location_id,
+                    'end_location_id' => $template->get($order)?->end_location_id,
+                ]);
+            }
         }
+
+        return $removedWithPeople;
+    }
+
+    /**
+     * Deletes a single day and keeps the trip consistent: the remaining days are renumbered 1..N and
+     * date_from/date_to shrink to the remaining days (e.g. the last day called off by a flood).
+     * The trip itself is never deleted here, even when its last day goes.
+     */
+    public function removeDay(TripDay $day): void
+    {
+        $day->delete();
+
+        $remaining = $this->days()->get();
+        if ($remaining->isEmpty()) {
+            return;
+        }
+
+        foreach ($remaining->values() as $i => $d) {
+            if ($d->order !== $i + 1) {
+                $d->update(['order' => $i + 1]);
+            }
+        }
+
+        $this->update([
+            'date_from' => $remaining->min('date')->toDateString(),
+            'date_to' => $remaining->max('date')->toDateString(),
+        ]);
+        $this->recalculateRentalPrice();
     }
 
     public function program(): BelongsTo

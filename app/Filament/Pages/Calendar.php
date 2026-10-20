@@ -2,13 +2,15 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\Meeting;
 use App\Models\TripDay;
 use BackedEnum;
 use Filament\Pages\Page;
 use Illuminate\Support\Carbon;
 use UnitEnum;
 
-// Month calendar of planned trip days (Admin/Superadmin) – a quick visual overview for planning.
+// Month calendar of trip days and staff meetings. Admins see every trip (or just their own),
+// instructors only the days they're assigned to. Meetings are shown to everyone.
 class Calendar extends Page
 {
     protected string $view = 'filament.pages.calendar';
@@ -22,6 +24,9 @@ class Calendar extends Page
     // First day of the shown month (Y-m-01).
     public string $month;
 
+    // Admins can narrow the calendar down to their own trips; instructors always see only theirs.
+    public bool $onlyMine = false;
+
     public function mount(): void
     {
         $this->month = Carbon::today()->startOfMonth()->toDateString();
@@ -34,12 +39,23 @@ class Calendar extends Page
 
     public function getTitle(): string
     {
-        return 'Kalendář výletů';
+        return 'Kalendář';
     }
 
     public static function canAccess(): bool
     {
+        return auth()->user()?->hasAnyRole(['Superadmin', 'Admin', 'Instructor']) ?? false;
+    }
+
+    /** Admins see (and can open) all trips; everyone else only their own, read-only. */
+    public function isManager(): bool
+    {
         return auth()->user()?->hasAnyRole(['Superadmin', 'Admin']) ?? false;
+    }
+
+    public function showsOnlyMine(): bool
+    {
+        return $this->onlyMine || ! $this->isManager();
     }
 
     public function previousMonth(): void
@@ -73,11 +89,18 @@ class Calendar extends Page
         $gridEnd = $monthStart->copy()->endOfMonth()->endOfWeek(Carbon::SUNDAY);
 
         $tripDays = TripDay::query()
-            ->with(['trip', 'location'])
+            ->with(['trip', 'location', 'endLocation'])
             ->whereHas('trip', fn ($q) => $q->where('status', '!=', 'cancelled'))
+            ->when($this->showsOnlyMine(), fn ($q) => $q->whereHas('assignments', fn ($a) => $a->where('user_id', auth()->id())))
             ->whereBetween('date', [$gridStart->toDateString(), $gridEnd->toDateString()])
             ->get()
             ->groupBy(fn (TripDay $d) => $d->date->toDateString());
+
+        $meetings = Meeting::query()
+            ->whereBetween('date', [$gridStart->toDateString(), $gridEnd->toDateString()])
+            ->orderBy('time')
+            ->get()
+            ->groupBy(fn (Meeting $m) => $m->date->toDateString());
 
         $today = Carbon::today()->toDateString();
         $weeks = [];
@@ -92,6 +115,7 @@ class Calendar extends Page
                     'inMonth' => $day->month === $monthStart->month,
                     'isToday' => $key === $today,
                     'tripDays' => $tripDays->get($key, collect())->sortBy(fn (TripDay $d) => $d->start_time ?: $d->meeting_time),
+                    'meetings' => $meetings->get($key, collect()),
                 ];
                 $day->addDay();
             }

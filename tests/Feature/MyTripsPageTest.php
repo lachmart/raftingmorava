@@ -127,6 +127,34 @@ class MyTripsPageTest extends TestCase
             ->assertSeeInOrder(["mountAction('addNote', { dayId: {$day1->id} }", "mountAction('addNote', { dayId: {$day2->id} }"], false);
     }
 
+    public function test_card_shows_client_details_and_who_else_goes(): void
+    {
+        $instructor = $this->userWithRole('Instructor');
+        $colleague = $this->userWithRole('Instructor');
+        $colleague->update(['name' => 'Kolega Novák']);
+
+        $assignment = $this->assignDay($instructor, Carbon::today());
+        $assignment->tripDay->trip->update([
+            'client_name' => 'ZŠ Olomouc', 'planned_paying_count' => 25, 'planned_escort_count' => 2,
+            'children_ages' => '12–14 let', 'onsite_phone' => '777 123 456',
+        ]);
+        $assignment->tripDay->update(['meeting_time' => '08:10', 'start_time' => '09:00']);
+        $assignment->tripDay->assignments()->create(['user_id' => $colleague->id, 'type' => 'driver']);
+
+        $this->actingAs($instructor);
+
+        $this->get('/my-trips')
+            ->assertOk()
+            ->assertSee('ZŠ Olomouc')
+            ->assertSee('25 platících')
+            ->assertSee('2 doprovod')
+            ->assertSee('12–14 let')
+            ->assertSee('777 123 456')
+            ->assertSee('sraz 08:10')
+            ->assertSee('start 09:00')
+            ->assertSee('Kolega Novák (řidič)');
+    }
+
     public function test_superadmin_sees_their_own_trips_on_the_page(): void
     {
         $superadmin = $this->userWithRole('Superadmin');

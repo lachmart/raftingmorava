@@ -49,9 +49,9 @@ class ConvertInquiryToTrip
                 'inquiry_id' => $inquiry->id,
             ]);
 
-            // Boarding-point template from the program (order → location_id); extra days stay empty.
-            $dayLocations = $program
-                ? $program->programDays()->pluck('location_id', 'order')
+            // Boarding/exit-point template from the program (by order); extra days stay empty.
+            $template = $program
+                ? $program->programDays()->get()->keyBy('order')
                 : collect();
 
             // Day 1 gets the confirmed start time; sraz = start − offset, konec = start + duration.
@@ -73,7 +73,8 @@ class ConvertInquiryToTrip
                     'trip_id' => $trip->id,
                     'date' => $from->copy()->addDays($order - 1)->toDateString(),
                     'order' => $order,
-                    'location_id' => $dayLocations[$order] ?? null,
+                    'location_id' => $template->get($order)?->location_id,
+                    'end_location_id' => $template->get($order)?->end_location_id,
                     'start_time' => $order === 1 ? $startTime : null,
                     'meeting_time' => $order === 1 ? $meetingTime : null,
                     'end_time' => $order === 1 ? $endTime : null,

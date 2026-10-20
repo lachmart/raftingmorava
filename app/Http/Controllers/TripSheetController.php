@@ -17,6 +17,7 @@ class TripSheetController extends Controller
             'program',
             'days' => fn ($q) => $q->orderBy('order'),
             'days.location',
+            'days.endLocation',
             'days.vehicles',
             'days.assignments.user',
             'notes.author',

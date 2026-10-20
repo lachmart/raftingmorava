@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Pages\Calendar;
 use App\Filament\Pages\Leaderboard;
 use App\Filament\Pages\MyTrips;
 use App\Filament\Pages\Payments;
 use App\Filament\Pages\Planning;
+use App\Models\Meeting;
 use App\Models\Trip;
 use App\Models\TripProgram;
 use App\Models\User;
@@ -37,6 +39,8 @@ class AccessControlTest extends TestCase
         $this->assertTrue(Planning::canAccess());
         $this->assertTrue(Payments::canAccess());
         $this->assertTrue(Gate::allows('viewAny', Trip::class));
+        $this->assertTrue(Gate::allows('viewAny', Meeting::class));
+        $this->assertTrue(Calendar::canAccess());
 
         $this->assertFalse(Leaderboard::canAccess());
         $this->assertTrue(MyTrips::canAccess(), 'Portál výletů vidí všechny role, tedy i Admin.');
@@ -53,6 +57,8 @@ class AccessControlTest extends TestCase
         $this->assertFalse(Payments::canAccess());
         $this->assertFalse(Leaderboard::canAccess());
         $this->assertFalse(Gate::allows('viewAny', Trip::class));
+        $this->assertFalse(Gate::allows('viewAny', Meeting::class));
+        $this->assertTrue(Calendar::canAccess(), 'Instruktor má kalendář se svými výlety.');
     }
 
     public function test_guest_is_redirected_to_login(): void

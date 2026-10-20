@@ -11,7 +11,15 @@
                     Další
                 </x-filament::button>
             </div>
-            <div class="text-lg font-semibold capitalize">{{ $this->monthLabel() }}</div>
+            <div class="flex items-center gap-4">
+                @if ($this->isManager())
+                    <label class="flex items-center gap-2 text-sm">
+                        <x-filament::input.checkbox wire:model.live="onlyMine" />
+                        Jen moje výlety
+                    </label>
+                @endif
+                <div class="text-lg font-semibold capitalize">{{ $this->monthLabel() }}</div>
+            </div>
         </div>
 
         {{-- Hlavička dnů v týdnu --}}
@@ -36,15 +44,28 @@
                         ])>{{ $day->date->day }}</div>
 
                         <div class="space-y-1">
+                            @foreach ($day->meetings as $m)
+                                <div class="block truncate rounded bg-emerald-100 px-1.5 py-0.5 text-xs text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300"
+                                    title="Schůze: {{ $m->name }}{{ $m->place ? ' – ' . $m->place : '' }}{{ $m->note ? ' – ' . $m->note : '' }}">
+                                    👥
+                                    @if ($m->time)
+                                        <span class="font-semibold">{{ \Illuminate\Support\Str::of($m->time)->substr(0, 5) }}</span>
+                                    @endif
+                                    {{ $m->name }}
+                                </div>
+                            @endforeach
                             @foreach ($day->tripDays as $td)
                                 @php($isRental = $td->trip?->type === 'rental')
-                                <a href="{{ \App\Filament\Resources\Trips\TripResource::getUrl('edit', ['record' => $td->trip_id]) }}"
+                                {{-- Instructors can't edit trips – their entries link to Moje výlety instead. --}}
+                                <a href="{{ $this->isManager()
+                                        ? \App\Filament\Resources\Trips\TripResource::getUrl('edit', ['record' => $td->trip_id])
+                                        : \App\Filament\Pages\MyTrips::getUrl() }}"
                                     @class([
                                         'block truncate rounded px-1.5 py-0.5 text-xs',
                                         'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300' => $isRental,
                                         'bg-primary-100 text-primary-800 dark:bg-primary-500/20 dark:text-primary-300' => ! $isRental,
                                     ])
-                                    title="{{ $td->trip?->name }}{{ $td->location?->name ? ' – ' . $td->location->name : '' }}">
+                                    title="{{ $td->trip?->name }}{{ $td->sectionLabel() ? ' – ' . $td->sectionLabel() : '' }}">
                                     @if ($td->start_time || $td->meeting_time)
                                         <span class="font-semibold">{{ \Illuminate\Support\Str::of($td->start_time ?: $td->meeting_time)->substr(0, 5) }}</span>
                                     @endif

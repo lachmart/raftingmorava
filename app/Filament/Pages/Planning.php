@@ -84,7 +84,7 @@ class Planning extends Page implements HasTable
         return $table
             ->query(
                 TripDay::query()
-                    ->with(['trip' => fn ($q) => $q->withCount('days'), 'location', 'vehicles', 'assignments.user'])
+                    ->with(['trip' => fn ($q) => $q->withCount('days'), 'location', 'endLocation', 'vehicles', 'assignments.user'])
                     ->whereHas('trip', fn ($q) => $q->where('status', '!=', 'cancelled'))
             )
             ->defaultSort('date')
@@ -126,7 +126,9 @@ class Planning extends Page implements HasTable
                 TextColumn::make('trip.type')->label('Typ')->badge()
                     ->formatStateUsing(fn (string $state) => $state === 'rental' ? 'Půjčovna' : 'Výlet')
                     ->color(fn (string $state) => $state === 'rental' ? 'warning' : 'info'),
-                TextColumn::make('location.name')->label('Nástupní místo')->wrap()->placeholder('—'),
+                // The day's section: boarding point → exit point (just the boarding point if no exit is set).
+                TextColumn::make('section')->label('Úsek')->wrap()
+                    ->state(fn (TripDay $record) => $record->sectionLabel())->placeholder('—'),
                 TextColumn::make('instructors')->label('Instruktoři')
                     ->state(fn (TripDay $record) => $record->assignments->where('type', 'instructor')->map(fn ($a) => $a->user?->name)->filter()->values()->all())
                     ->listWithLineBreaks()->placeholder('—'),
@@ -223,6 +225,7 @@ class Planning extends Page implements HasTable
                     'start_time' => $record->start_time,
                     'end_time' => $record->end_time,
                     'location_id' => $record->location_id,
+                    'end_location_id' => $record->end_location_id,
                     'instructors' => $record->assignments->where('type', 'instructor')->pluck('user_id')->all(),
                     'drivers' => $record->assignments->where('type', 'driver')->pluck('user_id')->all(),
                     'vehicles' => $record->vehicles->pluck('id')->all(),
@@ -232,7 +235,7 @@ class Planning extends Page implements HasTable
                 Hidden::make('trip_day_id'),
 
                 Section::make('Čas a místo')
-                    ->columns(4)
+                    ->columns(5)
                     ->schema([
                         TimePicker::make('meeting_time')->label('Čas srazu')->seconds(false)
                             ->live()->afterStateUpdated(fn (Get $get) => $this->saveDetails($get)),
@@ -240,7 +243,13 @@ class Planning extends Page implements HasTable
                             ->live()->afterStateUpdated(fn (Get $get) => $this->saveDetails($get)),
                         TimePicker::make('end_time')->label('Čas konce')->seconds(false)
                             ->live()->afterStateUpdated(fn (Get $get) => $this->saveDetails($get)),
-                        Select::make('location_id')->label('Lokace (místo srazu)')
+                        Select::make('location_id')->label('Nástupní místo')
+                            ->options(fn () => Location::where('active', true)->orderBy('name')->pluck('name', 'id'))
+                            ->searchable()->preload()
+                            ->createOptionForm([TextInput::make('name')->label('Název lokace')->required()])
+                            ->createOptionUsing(fn (array $data) => Location::create($data)->id)
+                            ->live()->afterStateUpdated(fn (Get $get) => $this->saveDetails($get)),
+                        Select::make('end_location_id')->label('Výstupní místo')
                             ->options(fn () => Location::where('active', true)->orderBy('name')->pluck('name', 'id'))
                             ->searchable()->preload()
                             ->createOptionForm([TextInput::make('name')->label('Název lokace')->required()])
@@ -316,7 +325,7 @@ class Planning extends Page implements HasTable
             ->get()->mapWithKeys(fn ($u) => [$u->id => $u->name.($u->is_driver ? ' 🚗' : '')])->all();
     }
 
-    /** Continuous save of the day's times and location. */
+    /** Continuous save of the day's times and places. */
     public function saveDetails(Get $get): void
     {
         $day = TripDay::find($get('trip_day_id'));
@@ -329,6 +338,7 @@ class Planning extends Page implements HasTable
             'start_time' => $get('start_time') ?: null,
             'end_time' => $get('end_time') ?: null,
             'location_id' => $get('location_id') ?: null,
+            'end_location_id' => $get('end_location_id') ?: null,
         ]);
     }
 

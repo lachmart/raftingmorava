@@ -75,7 +75,7 @@
                     <th>Den</th>
                     <th>Datum</th>
                     <th>Časy</th>
-                    <th>Nástupní místo</th>
+                    <th>Úsek</th>
                     <th>Instruktoři</th>
                     <th>Řidiči</th>
                     <th>Vozidla</th>
@@ -92,7 +92,7 @@
                             @if ($fmt($day->end_time)) konec {{ $fmt($day->end_time) }}@endif
                             @if (! $day->meeting_time && ! $day->start_time && ! $day->end_time)<span class="muted">—</span>@endif
                         </td>
-                        <td>{{ $day->location?->name ?: '—' }}</td>
+                        <td>{{ $day->sectionLabel() ?: '—' }}</td>
                         <td>{{ $names($day, 'instructor') ?: '—' }}</td>
                         <td>{{ $names($day, 'driver') ?: '—' }}</td>
                         <td>{{ $day->vehicles->pluck('name')->implode(', ') ?: '—' }}</td>

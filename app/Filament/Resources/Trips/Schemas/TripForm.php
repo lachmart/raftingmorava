@@ -56,8 +56,18 @@ class TripForm
 
                         DatePicker::make('date_from')->label('Termín od')->required()->native(false)->displayFormat('d.m.Y')
                             ->live()->afterStateUpdated(fn (Get $get, Set $set) => self::syncDateTo($get, $set)),
+                        // Bounded by date_from and MAX_DAYS so a typo in the year can't spawn hundreds of days.
                         DatePicker::make('date_to')->label('Termín do')->required()->native(false)->displayFormat('d.m.Y')->live()
-                            ->helperText('Předvyplní se podle délky programu; lze upravit ručně.'),
+                            ->afterOrEqual('date_from')
+                            ->minDate(fn (Get $get) => $get('date_from') ?: null)
+                            ->maxDate(fn (Get $get) => $get('date_from')
+                                ? Carbon::parse($get('date_from'))->addDays(Trip::MAX_DAYS - 1)->toDateString()
+                                : null)
+                            ->validationMessages([
+                                'after_or_equal' => 'Termín do nesmí být před termínem od.',
+                                'before_or_equal' => 'Výlet může trvat nejvýš '.Trip::MAX_DAYS.' dní – zkontroluj rok v termínu.',
+                            ])
+                            ->helperText('Předvyplní se podle délky programu; lze upravit ručně. Změna termínu posune i dny výletu.'),
 
                         TextInput::make('planned_paying_count')->label('Platících (plán)')->numeric()->minValue(0),
                         TextInput::make('planned_escort_count')->label('Doprovod – neplatící (plán)')->numeric()->minValue(0),

@@ -9,11 +9,21 @@ use Illuminate\Support\Carbon;
 // Builds a textual list of an instructor's trips/days for the {{trip_list}} / {{tomorrow_trip_list}} macros.
 class InstructorSchedule
 {
+    // Everything the Moje výlety card shows: trip details, places, vehicles and who else goes that day.
+    private const RELATIONS = [
+        'tripDay.trip.notes.author',
+        'tripDay.trip.days',
+        'tripDay.location',
+        'tripDay.endLocation',
+        'tripDay.vehicles',
+        'tripDay.assignments.user',
+    ];
+
     /** Instructor's assignments in the given date range (with relations for the description). */
     public static function assignmentsBetween(User $instructor, Carbon $from, Carbon $to)
     {
         return $instructor->assignments()
-            ->with(['tripDay.trip.notes.author', 'tripDay.location', 'tripDay.vehicles'])
+            ->with(self::RELATIONS)
             ->whereHas('tripDay', fn ($q) => $q->whereBetween('date', [$from->toDateString(), $to->toDateString()]))
             ->get()
             ->sortBy(fn ($a) => $a->tripDay->date);
@@ -23,7 +33,7 @@ class InstructorSchedule
     public static function pastAssignmentsFor(User $instructor)
     {
         return $instructor->assignments()
-            ->with(['tripDay.trip.notes.author', 'tripDay.location', 'tripDay.vehicles'])
+            ->with(self::RELATIONS)
             ->whereHas('tripDay', fn ($q) => $q->whereDate('date', '<', Carbon::today()->toDateString()))
             ->get()
             ->sortByDesc(fn ($a) => $a->tripDay->date);
