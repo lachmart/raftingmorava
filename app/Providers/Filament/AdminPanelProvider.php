@@ -29,6 +29,9 @@ class AdminPanelProvider extends PanelProvider
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->login()
             ->profile() // own profile (name, email, password) – each user edits their own
+            // Saving a record (create or edit) returns to the resource's list.
+            ->resourceCreatePageRedirect('index')
+            ->resourceEditPageRedirect('index')
             // Colors matched to the raftingmorava.cz website (water blue #09afe6 + green accent).
             ->colors([
                 'primary' => Color::hex('#09afe6'),
