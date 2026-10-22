@@ -8,6 +8,7 @@ use App\Models\TripDay;
 use App\Models\TripNote;
 use App\Models\TripProgram;
 use App\Notifications\CustomerInquiryConfirmedNotification;
+use App\Support\TripDayDrafts;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -49,36 +50,10 @@ class ConvertInquiryToTrip
                 'inquiry_id' => $inquiry->id,
             ]);
 
-            // Boarding/exit-point template from the program (by order); extra days stay empty.
-            $template = $program
-                ? $program->programDays()->get()->keyBy('order')
-                : collect();
-
-            // Day 1 gets the confirmed start time; sraz = start − offset, konec = start + duration.
-            $startTime = $data['start_time'] ?? null;
-            $meetingTime = null;
-            $endTime = null;
-            if ($startTime) {
-                $start = Carbon::parse($startTime);
-                $offset = $program?->meeting_offset_minutes ?? 50;
-                $meetingTime = $start->copy()->subMinutes($offset)->format('H:i');
-                if ($program?->duration_minutes) {
-                    $endTime = $start->copy()->addMinutes($program->duration_minutes)->format('H:i');
-                }
-            }
-
-            // Generate the trip days.
-            for ($order = 1; $order <= $dayCount; $order++) {
-                TripDay::create([
-                    'trip_id' => $trip->id,
-                    'date' => $from->copy()->addDays($order - 1)->toDateString(),
-                    'order' => $order,
-                    'location_id' => $template->get($order)?->location_id,
-                    'end_location_id' => $template->get($order)?->end_location_id,
-                    'start_time' => $order === 1 ? $startTime : null,
-                    'meeting_time' => $order === 1 ? $meetingTime : null,
-                    'end_time' => $order === 1 ? $endTime : null,
-                ]);
+            // Days with the program's boarding/exit points and default times (day 1 from the
+            // confirmed start, later days 9–15) – the same drafts the create wizard uses.
+            foreach (TripDayDrafts::build($program, $from->toDateString(), $to->toDateString(), $data['start_time'] ?? null) as $draft) {
+                TripDay::create(['trip_id' => $trip->id, ...$draft]);
             }
 
             // Carry the inquiry note over as the first post in the trip's note thread.

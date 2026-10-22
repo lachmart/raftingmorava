@@ -51,6 +51,9 @@ class InquiryConversionTest extends TestCase
         $this->assertEquals('09:00', $hm($day1->start_time));
         $this->assertEquals('08:10', $hm($day1->meeting_time), 'Sraz = start − offset (50 min)');
         $this->assertEquals('13:00', $hm($day1->end_time), 'Konec = start + trvání (240 min)');
+        $this->assertEquals('09:00', $hm($day2->start_time), 'Další dny 9–15');
+        $this->assertEquals('15:00', $hm($day2->end_time));
+        $this->assertEquals('08:10', $hm($day2->meeting_time));
         $this->assertEquals($loc1->id, $day1->location_id, 'Den 1 → nástupní místo 1');
         $this->assertEquals($loc2->id, $day2->location_id, 'Den 2 → nástupní místo 2');
 

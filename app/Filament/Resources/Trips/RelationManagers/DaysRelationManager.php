@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Trips\RelationManagers;
 
 use App\Filament\Resources\Trips\TripResource;
 use App\Models\TripDay;
+use App\Models\TripProgram;
 use App\Models\User;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
@@ -18,6 +19,8 @@ use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -31,6 +34,27 @@ class DaysRelationManager extends RelationManager
     protected static string $relationship = 'days';
 
     protected static ?string $title = 'Dny výletu';
+
+    /**
+     * After the start changes: sraz/konec follow it when they were empty or still equal to what the
+     * previous start computed – a time typed by hand is left alone.
+     *
+     * @return array{meeting_time: ?string, end_time: ?string}
+     */
+    public static function recalculateTimes(?TripProgram $program, int $order, ?string $old, ?string $new, ?string $meeting, ?string $end): array
+    {
+        $hm = fn (?string $t) => blank($t) ? null : substr($t, 0, 5);
+        $before = TripProgram::meetingAndEndFor($program, $order, $hm($old));
+        $after = TripProgram::meetingAndEndFor($program, $order, $hm($new));
+
+        $follow = fn (?string $current, ?string $computedBefore, ?string $computedAfter) =>
+            ($current === null || $current === $computedBefore) ? $computedAfter : $current;
+
+        return [
+            'meeting_time' => $follow($hm($meeting), $before['meeting_time'], $after['meeting_time']),
+            'end_time' => $follow($hm($end), $before['end_time'], $after['end_time']),
+        ];
+    }
 
     public function form(Schema $schema): Schema
     {
@@ -56,7 +80,14 @@ class DaysRelationManager extends RelationManager
                             ->columnSpan(3),
 
                         TimePicker::make('meeting_time')->label('Čas srazu')->seconds(false)->columnSpan(2),
-                        TimePicker::make('start_time')->label('Čas začátku')->seconds(false)->columnSpan(2),
+                        TimePicker::make('start_time')->label('Čas začátku')->seconds(false)->columnSpan(2)
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function (?string $state, ?string $old, Get $get, Set $set) {
+                                $times = self::recalculateTimes($this->getOwnerRecord()->program, (int) ($get('order') ?: 1),
+                                    $old, $state, $get('meeting_time'), $get('end_time'));
+                                $set('meeting_time', $times['meeting_time']);
+                                $set('end_time', $times['end_time']);
+                            }),
                         TimePicker::make('end_time')->label('Čas konce')->seconds(false)->columnSpan(2),
                     ]),
 
