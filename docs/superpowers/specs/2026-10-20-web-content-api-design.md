@@ -1,7 +1,9 @@
 # Web raftingmorava.cz z dat systému: obsah, administrace a API
 
 **Datum:** 2026-10-20
-**Stav:** Schváleno uživatelem (návrh), čeká na revizi specifikace
+**Stav:** Schváleno uživatelem. Implementace odložena (2026-10-21).
+**Smlouva pro webaře:** Claude Doc „Rafting Morava – API pro web (v1)“ –
+https://claude.ai/artifact/PvYSTzMLCFEga75w9euutb (tato specifikace je s ním srovnaná).
 
 ## Cíl
 
@@ -113,7 +115,7 @@ která dnes používají `category` / `categoryLabel()`, přejdou na vztah.
 | `team_members` | `name`, `role` (JSON), `photo` (JSON), `phone`, `email`, `sort`, `published` |
 | `testimonials` | `author`, `text` (JSON), `sort`, `published` |
 | `partners` | `name`, `url`, `logo` (JSON), `sort`, `published` |
-| `site_settings` | jeden řádek: `phones` (JSON), `email`, `inquiry_notify_email`, `address`, `company_id`, `socials` (JSON), `web_url`, `webhook_url`, `webhook_secret`, `webhook_token` (nullable), `content_version` (int), `published_version` (int), `published_at` |
+| `site_settings` | jeden řádek: `phones` (JSON pole `{label, number}`), `email`, `inquiry_notify_email`, `address`, `company_id`, `socials` (JSON), `web_url`, `webhook_url`, `webhook_secret`, `webhook_token` (nullable), `content_version` (int), `published_version` (int), `published_at` |
 
 Menu se v systému **nestaví** – struktura je pevná ve šabloně webu.
 
@@ -153,10 +155,15 @@ Základ `https://system.raftingmorava.cz/api/v1`. Routy v `routes/api.php`, pref
   stránkované jako Laravel paginator (`meta.current_page`, `meta.last_page`, `links`).
 - **Výběr polí:** každá entita má vlastní `JsonResource` s **explicitním výčtem polí** – žádné
   `toArray()` modelu. Testy hlídají, že interní pole neuniknou.
-- **Obrázek** v odpovědi: `{ "url", "width", "height", "alt" }`.
+- **Obrázek** v odpovědi: `{ "url", "width", "height", "alt" }` nebo `null`.
+- **Formátovaný text:** `description`, `body`, `intro`, `answer` jsou HTML (p, h2–h3, seznamy,
+  odkazy, tučné); ostatní textová pole prostý text.
+- **Data a ceny:** ISO 8601 se zónou; ceny v Kč jako celé číslo, `price: null` = cena na dotaz.
+- **Chyby:** `{ "message" }`, u `422` navíc `errors` po polích.
+- **Stránkování** jen `/news`; ostatní seznamy vrací vše.
 - **Cache:** serverová cache odpovědí (file driver), klíč = URL + `content_version`; HTTP
   `Cache-Control: public, max-age=300` a `ETag` (`If-None-Match` → `304`).
-- **Rate limit:** 120 požadavků/min/IP pro čtení.
+- **Rate limit:** 120 požadavků/min/IP pro čtení; překročení → `429` s `Retry-After`.
 - **CORS:** povolené originy z `web_url` (+ případné další v configu), metody `GET`, `POST`.
 
 ### 3.2 Endpointy pro čtení
@@ -175,11 +182,19 @@ Základ `https://system.raftingmorava.cz/api/v1`. Routy v `routes/api.php`, pref
 | `GET /news/{slug}` | detail aktuality |
 | `GET /pages/{slug}` | statická stránka |
 | `GET /faq`, `GET /team`, `GET /testimonials` | publikované položky podle `sort` |
-| `GET /sitemap` | všechny veřejné URL obou jazyků: `{type, lang, slug, path, updated_at, alternates}`; pro generování stránek, sitemap.xml a hreflang |
+| `GET /sitemap` | všechny veřejné URL obou jazyků: `{type, lang, slug, path, updated_at, alternates}`; pro generování stránek, sitemap.xml a hreflang; ignoruje `lang` (vrací oba jazyky), `type` = `program`/`category`/`news`/`page`; pevné stránky šablony v něm nejsou |
 | `GET /redirects` | `{from, to}` – staré URL blogu → aktuality (z `news.old_url`) |
 
+Pole ostatních entit: kategorie `name, slug, intro, cover, seo, alternates, programs[]`;
+lokace `id, name, description, lat, lng, map_url`; vybavení `id, name, description,
+price_per_day, cover`; aktualita `slug, title, perex, cover, published_at` (+ detail `body, seo,
+alternates`); stránka `slug, title, body, seo, alternates, updated_at`; FAQ `question, answer`;
+tým `name, role, photo, phone, email`; recenze `author, text`. `/filters` vrací u obtížností
+`{value, name, count}`. Prázdné SEO se doplní z `title`/`perex`.
+**Otevřené:** mají telefon a e-mail týmu jít do `/team`? (v docu zatím ano, nullable)
+
 **Karta programu:** `id`, `slug`, `title`, `perex`, `cover`, `price` (`price_per_person`),
-`duration_label`, `days` (`number_of_days`), `difficulty`, `vessels[]`, `region`, `category`.
+`duration_label`, `number_of_days`, `difficulty`, `vessels[]`, `region`, `category`.
 
 **Detail programu:** karta + `description`, `price_note`, `itinerary[]`, `group_min`,
 `group_max`, `min_age`, `gallery[]`, `days[]` (`order`, `start_location`, `end_location` –
@@ -194,7 +209,7 @@ stránka `/{slug}/`; angličtina s prefixem `/en`.
 Bez tokenu (formulář odesílá prohlížeč). Ochrana proti spamu:
 
 - honeypot pole `website` – musí být prázdné, jinak tichá odpověď `201` bez uložení;
-- `started_at` (unix čas otevření formuláře) – odeslání dřív než za 3 s → `422`;
+- `started_at` (unix čas otevření formuláře) – **povinné**; chybí nebo odeslání dřív než za 3 s → `422`;
 - rate limit 5/min/IP; CORS jen z domén webu.
 - Rezerva do budoucna: Cloudflare Turnstile (bez PHP rozšíření).
 
@@ -238,6 +253,8 @@ jen zástupný text.
   „Web se publikuje“. Chyba / timeout (10 s) → chybová notifikace s kódem, verze se nemění.
 - Pro GitHub Actions: URL `repository_dispatch` + token v nastavení (hlavička
   `Authorization: Bearer`); pole `webhook_token` v `site_settings` (nullable).
+  Na adresu `api.github.com` se pošle tělo `{"event_type": "publish", "client_payload":
+  {"version": <content_version>}}`. Netlify/Vercel build hook = jen URL.
 
 ### 3.5 Verzování
 
