@@ -76,6 +76,7 @@
                 <li style="{{ $liStyle }}">Vše se ukládá <strong>průběžně</strong> – není potřeba nic potvrzovat.</li>
                 <li style="{{ $liStyle }}">Dole v okně přidáváš <strong>poznámky ke dni</strong>.</li>
                 <li style="{{ $liStyle }}">Filtr <em>„Jen nepřiřazené"</em> ukáže výlety bez instruktora.</li>
+                <li style="{{ $liStyle }}">Tlačítko <strong>„Tisk rozpisu"</strong> otevře v nové záložce přehled všech výletů za zvolené období (výchozí příští pondělí až úterý o týden později, nejvýš 62 dní) – po dnech, seřazeno podle srazu, s klientem, počty, úsekem, instruktory, řidiči a vozidly. Zrušené výlety se netisknou.</li>
                 <li style="{{ $liStyle }}">Tlačítko <strong>„Odeslat souhrnné e-maily"</strong> pošle každému instruktorovi přehled jeho nadcházejících výletů (se srazem i startem).</li>
             </ul>
         </x-filament::section>
@@ -87,6 +88,8 @@
                 <li style="{{ $liStyle }}">Ve výchozím stavu ukazuje dny <strong>od dneška dál, nejbližší nahoře</strong>. Filtrem <em>„Termín od–do"</em> zobrazíš libovolné období včetně historie. Proběhlé dny jsou ztlumené.</li>
                 <li style="{{ $liStyle }}"><strong>Smazat</strong> u vícedenního výletu se zeptá, zda smazat celý výlet, nebo jen ten den (termín výletu se pak sám zkrátí). Hromadné mazání maže vždy celé výlety.</li>
                 <li style="{{ $liStyle }}">Zvolené řazení a filtry si seznam pamatuje, dokud se neodhlásíš. Sloupce lze skrýt a přeskládat (ikona sloupců nad tabulkou).</li>
+                <li style="{{ $liStyle }}"><strong>Vytvořit</strong> otevře průvodce ve třech krocích: <em>Program a termín</em> (včetně času startu 1. dne) → <em>Klient a počty</em> → <em>Dny</em>. V posledním kroku jsou dny předvyplněné – nástupní a výstupní místo z programu, sraz = start − předstih programu, konec = start + délka programu; další dny 9:00–15:00. Vše jde upravit ještě před vytvořením. Když se vrátíš a změníš program, termín nebo čas startu, dny se sestaví znovu (ruční úpravy dnů se zahodí).</li>
+                <li style="{{ $liStyle }}">Když u dne změníš <strong>čas začátku</strong>, sraz a konec se posunou s ním – kromě časů, které jsi přepsal ručně.</li>
                 <li style="{{ $liStyle }}"><strong>Změna termínu</strong> posune i dny výletu (časy, místa a lidé zůstanou podle pořadí dne). Při zkrácení se přebývající dny smažou. Výlet může mít nejvýš 31 dní.</li>
                 <li style="{{ $liStyle }}">Detail výletu obsahuje formulář (typ, program, termín, klient, <em>vyúčtování</em>, u půjčovny vybavení) a záložky:</li>
                 <li style="{{ $liStyle }}"><strong>Dny výletu</strong> – přiřazení, časy, nástupní a výstupní místo, vozidla (jako v plánování).</li>

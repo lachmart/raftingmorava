@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Resources\Trips\TripResource;
+use App\Http\Controllers\TripScheduleController;
 use App\Models\Location;
 use App\Models\Trip;
 use App\Models\TripDay;
@@ -391,6 +392,39 @@ class Planning extends Page implements HasTable
     protected function getHeaderActions(): array
     {
         return [
+            // Printable schedule of all trips in a range – default next Monday to the Tuesday after.
+            Action::make('printSchedule')
+                ->label('Tisk rozpisu')
+                ->icon('heroicon-o-printer')
+                ->color('gray')
+                ->modalHeading('Tisk rozpisu výletů')
+                ->modalSubmitActionLabel('Otevřít tisk')
+                ->modalWidth('md')
+                ->fillForm(function () {
+                    [$from, $until] = TripScheduleController::defaultRange();
+
+                    return ['from' => $from->toDateString(), 'until' => $until->toDateString()];
+                })
+                ->schema([
+                    DatePicker::make('from')->label('Od')->required()->native(false)->displayFormat('d.m.Y'),
+                    DatePicker::make('until')->label('Do')->required()->native(false)->displayFormat('d.m.Y')
+                        ->afterOrEqual('from')
+                        ->maxDate(fn (Get $get) => $get('from')
+                            ? Carbon::parse($get('from'))->addDays(TripScheduleController::MAX_DAYS - 1)->toDateString()
+                            : null)
+                        ->validationMessages([
+                            'after_or_equal' => 'Datum do nesmí být před datem od.',
+                            'before_or_equal' => 'Rozsah může mít nejvýš '.TripScheduleController::MAX_DAYS.' dní.',
+                        ]),
+                ])
+                ->action(function (array $data) {
+                    $url = route('trip.schedule', [
+                        'from' => Carbon::parse($data['from'])->toDateString(),
+                        'until' => Carbon::parse($data['until'])->toDateString(),
+                    ]);
+                    $this->js('window.open('.json_encode($url).', "_blank")');
+                }),
+
             Action::make('sendSummaries')
                 ->label('Odeslat souhrnné e-maily')
                 ->icon('heroicon-o-envelope')
