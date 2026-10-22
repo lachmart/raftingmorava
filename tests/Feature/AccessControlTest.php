@@ -65,4 +65,10 @@ class AccessControlTest extends TestCase
     {
         $this->get('/')->assertRedirect('/login');
     }
+
+    public function test_guests_opening_a_print_page_are_sent_to_the_login(): void
+    {
+        $this->get('/trip-schedule')->assertRedirect('/login');
+        $this->get('/trip-sheet/1')->assertRedirect('/login');
+    }
 }
