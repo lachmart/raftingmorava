@@ -35,7 +35,20 @@ class TripsListTest extends TestCase
             ->assertCanSeeTableRecords([$day1, $day2, $day3], inOrder: true)
             ->assertTableColumnStateSet('section', 'Postřelmov → Vila Háj', $day2)
             ->assertTableColumnStateSet('time', 'start 09:30', $day2)
-            ->assertSee('den 2/3');
+            ->assertTableColumnFormattedStateSet('trip.name', '2/3 Výlet 1', $day2);
+    }
+
+    public function test_a_single_day_trip_name_has_no_day_prefix(): void
+    {
+        $day = $this->trip(1, 1)->days()->first();
+
+        Livewire::test(ListTrips::class)
+            ->assertTableColumnFormattedStateSet('trip.name', 'Výlet 1', $day);
+    }
+
+    public function test_shows_25_rows_per_page_by_default(): void
+    {
+        $this->assertSame(25, Livewire::test(ListTrips::class)->instance()->getTableRecordsPerPage());
     }
 
     public function test_default_shows_days_from_today_on_soonest_first(): void

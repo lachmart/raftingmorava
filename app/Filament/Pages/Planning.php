@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Concerns\PersistsTableLayoutPerUser;
 use App\Filament\Resources\Trips\TripResource;
 use App\Http\Controllers\TripScheduleController;
 use App\Models\Location;
@@ -48,6 +49,7 @@ use UnitEnum;
 class Planning extends Page implements HasTable
 {
     use InteractsWithTable;
+    use PersistsTableLayoutPerUser;
 
     protected string $view = 'filament.pages.planning';
 

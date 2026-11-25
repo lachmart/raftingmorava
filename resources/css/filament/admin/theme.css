@@ -2,3 +2,18 @@
 
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
+
+/* Compact table rows (Trips list): Filament's cells are py-4 – too tall for a long daily list. */
+.rm-compact-table .fi-ta-cell {
+    & .fi-ta-text,
+    & .fi-ta-icon,
+    & .fi-ta-placeholder {
+        @apply py-1.5;
+    }
+
+    &:has(.fi-ta-actions),
+    &:has(.fi-ta-record-checkbox),
+    &.fi-ta-selection-cell {
+        @apply py-1.5;
+    }
+}

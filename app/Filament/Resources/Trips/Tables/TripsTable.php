@@ -38,9 +38,13 @@ class TripsTable
                     ->with(['trip' => fn ($q) => $q->withCount('days'), 'trip.program', 'location', 'endLocation'])
             )
             ->recordUrl(fn (TripDay $record) => TripResource::getUrl('edit', ['record' => $record->trip_id]))
-            // Every column can be hidden and reordered (column manager), and the chosen sort/filters
-            // survive navigating away and back within the session.
+            // Every column can be hidden and reordered (column manager) – remembered per user across
+            // logins (PersistsTableLayoutPerUser on the page); sort/filters survive within the session.
             ->reorderableColumns()
+            // Lower rows (see .rm-compact-table in the admin theme) and more of them per page.
+            ->extraAttributes(['class' => 'rm-compact-table'])
+            ->paginated([10, 25, 50, 100])
+            ->defaultPaginationPageOption(25)
             ->persistSortInSession()
             ->persistFiltersInSession()
             ->persistSearchInSession()
@@ -49,28 +53,32 @@ class TripsTable
             ->columns([
                 TextColumn::make('trip.name')->label('Název')->sortable()->wrap()->toggleable()
                     ->searchable(query: fn (Builder $query, string $search) => $query->whereHas('trip', fn ($q) => $q->where('name', 'like', "%{$search}%")))
-                    ->description(fn (TripDay $record) => ($record->trip?->days_count ?? 1) > 1
-                        ? 'den ' . $record->order . '/' . $record->trip->days_count
-                        : null),
+                    // Multi-day trips show which day the row is right before the name: "1/3 Název".
+                    ->formatStateUsing(fn (?string $state, TripDay $record) => ($record->trip?->days_count ?? 1) > 1
+                        ? $record->order.'/'.$record->trip->days_count.' '.$state
+                        : $state),
                 TextColumn::make('trip.type')->label('Typ')->badge()->toggleable()
                     ->formatStateUsing(fn (string $state) => Trip::TYPES[$state] ?? $state)
                     ->color(fn (string $state) => $state === 'rental' ? 'warning' : 'info'),
                 TextColumn::make('trip.program.name')->label('Program')->placeholder('—')->toggleable(isToggledHiddenByDefault: true)->wrap(),
                 TextColumn::make('trip.client_name')->label('Klient')->placeholder('—')->toggleable()->wrap()
                     ->searchable(query: fn (Builder $query, string $search) => $query->whereHas('trip', fn ($q) => $q->where('client_name', 'like', "%{$search}%"))),
-                TextColumn::make('date')->label('Datum')->date('d.m.Y')->sortable()->toggleable()
-                    ->description(fn (TripDay $record) => Str::ucfirst($record->date?->translatedFormat('l') ?? '')),
+                // Weekday inline ("Po 24.11.2026") instead of a second line – keeps the rows low.
+                TextColumn::make('date')->label('Datum')->sortable()->toggleable()
+                    ->formatStateUsing(fn (TripDay $record) => $record->date
+                        ? Str::ucfirst($record->date->translatedFormat('D')).' '.$record->date->format('d.m.Y')
+                        : null),
                 // The day's start (or meeting time when the start isn't set yet).
                 TextColumn::make('time')->label('Čas')->toggleable()->placeholder('—')
                     ->state(function (TripDay $record) {
                         $time = $record->start_time ?: $record->meeting_time;
 
-                        return $time ? ($record->start_time ? 'start ' : 'sraz ') . substr((string) $time, 0, 5) : null;
+                        return $time ? ($record->start_time ? 'start ' : 'sraz ').substr((string) $time, 0, 5) : null;
                     }),
                 TextColumn::make('section')->label('Úsek')->toggleable()->wrap()->placeholder('—')
                     ->state(fn (TripDay $record) => $record->sectionLabel()),
                 TextColumn::make('trip.planned_paying_count')->label('Platících')->numeric()->toggleable()
-                    ->formatStateUsing(fn ($state, TripDay $record) => $state . ($record->trip?->planned_escort_count ? ' + ' . $record->trip->planned_escort_count . ' dopr.' : '')),
+                    ->formatStateUsing(fn ($state, TripDay $record) => $state.($record->trip?->planned_escort_count ? ' + '.$record->trip->planned_escort_count.' dopr.' : '')),
                 TextColumn::make('trip.status')->label('Stav')->badge()->toggleable()
                     ->formatStateUsing(fn (string $state) => Trip::STATUSES[$state] ?? $state)
                     ->color(fn (string $state) => match ($state) {
@@ -105,10 +113,10 @@ class TripsTable
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
                         if ($data['from'] ?? null) {
-                            $indicators['from'] = 'Od ' . Carbon::parse($data['from'])->format('d.m.Y');
+                            $indicators['from'] = 'Od '.Carbon::parse($data['from'])->format('d.m.Y');
                         }
                         if ($data['until'] ?? null) {
-                            $indicators['until'] = 'Do ' . Carbon::parse($data['until'])->format('d.m.Y');
+                            $indicators['until'] = 'Do '.Carbon::parse($data['until'])->format('d.m.Y');
                         }
 
                         return $indicators;
@@ -170,15 +178,15 @@ class TripsTable
             ->icon('heroicon-o-trash')
             ->color('danger')
             ->requiresConfirmation()
-            ->modalHeading(fn (TripDay $record) => 'Smazat – ' . $record->trip?->name)
+            ->modalHeading(fn (TripDay $record) => 'Smazat – '.$record->trip?->name)
             ->modalDescription(fn (TripDay $record) => ($record->trip?->days_count ?? 1) > 1
                 ? null
                 : 'Smaže se celý výlet.')
             ->schema(fn (TripDay $record) => ($record->trip?->days_count ?? 1) > 1 ? [
                 Radio::make('scope')->hiddenLabel()->required()->default('trip')
                     ->options([
-                        'trip' => 'Celý výlet (všech ' . $record->trip->days_count . ' dní)',
-                        'day' => 'Jen tento den – den ' . $record->order . ', ' . $record->date?->format('d.m.Y'),
+                        'trip' => 'Celý výlet (všech '.$record->trip->days_count.' dní)',
+                        'day' => 'Jen tento den – den '.$record->order.', '.$record->date?->format('d.m.Y'),
                     ]),
             ] : [])
             ->visible(fn (TripDay $record) => Gate::allows('delete', $record->trip))
@@ -234,7 +242,7 @@ class TripsTable
                         });
 
                     fclose($out);
-                }, 'vyuctovani-' . now()->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+                }, 'vyuctovani-'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
             });
     }
 }
