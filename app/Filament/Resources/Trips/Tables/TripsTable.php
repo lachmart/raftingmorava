@@ -126,9 +126,6 @@ class TripsTable
                 self::tripFilter('trip_program_id', 'Program', fn () => TripProgram::orderBy('name')->pluck('name', 'id')->all())
                     ->searchable(),
             ])
-            ->headerActions([
-                self::exportSettlementAction(),
-            ])
             ->recordActions([
                 Action::make('sheet')
                     ->label('Tisk rozpisu')
@@ -142,7 +139,9 @@ class TripsTable
                     ->url(fn (TripDay $record) => TripResource::getUrl('edit', ['record' => $record->trip_id])),
                 self::deleteAction(),
             ])
+            // Toolbar = the row with search/filters, so the export doesn't take a row of its own.
             ->toolbarActions([
+                self::exportSettlementAction(),
                 BulkActionGroup::make([
                     // Selected rows are days, but this removes their whole trips (with all days).
                     BulkAction::make('deleteTrips')
