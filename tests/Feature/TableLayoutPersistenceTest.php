@@ -68,4 +68,11 @@ class TableLayoutPersistenceTest extends TestCase
         $this->assertSame(25, Livewire::test(ListTrips::class)->instance()->getTableRecordsPerPage());
         $this->assertSame(1, TablePreference::where('key', 'like', '%_per_page')->count());
     }
+
+    public function test_column_manager_changes_apply_immediately(): void
+    {
+        $this->actingAs($this->userWithRole('Admin'));
+
+        $this->assertFalse(Livewire::test(ListTrips::class)->instance()->getTable()->hasDeferredColumnManager());
+    }
 }
