@@ -46,6 +46,17 @@ class TripsListTest extends TestCase
             ->assertTableColumnFormattedStateSet('trip.name', 'Výlet 1', $day);
     }
 
+    public function test_the_client_is_left_out_of_the_name_since_it_has_its_own_column(): void
+    {
+        $trip = $this->trip(1, 1);
+        $trip->update(['name' => 'Chomoutov - kemp, ZŠ Svatoplukova', 'client_name' => 'ZŠ Svatoplukova']);
+
+        Livewire::test(ListTrips::class)
+            ->assertTableColumnFormattedStateSet('trip.name', 'Chomoutov - kemp', $trip->days()->first());
+
+        $this->assertSame('Chomoutov - kemp, ZŠ Svatoplukova', $trip->fresh()->name);
+    }
+
     public function test_shows_25_rows_per_page_by_default(): void
     {
         $this->assertSame(25, Livewire::test(ListTrips::class)->instance()->getTableRecordsPerPage());

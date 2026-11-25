@@ -51,17 +51,31 @@ class TripsTable
             // Days that are already over are muted so the upcoming ones stand out.
             ->recordClasses(fn (TripDay $record) => $record->date?->lt(Carbon::today()) ? 'opacity-50' : null)
             ->columns([
-                TextColumn::make('trip.name')->label('Název')->sortable()->wrap()->toggleable()
+                // Wraps, but never narrower than ~16rem – otherwise the browser squeezes a long name
+                // into a word per line (rows 7 lines tall).
+                TextColumn::make('trip.name')->label('Název')->sortable()->toggleable()->wrap()
+                    ->extraHeaderAttributes(['style' => 'min-width: 16rem'])
                     ->searchable(query: fn (Builder $query, string $search) => $query->whereHas('trip', fn ($q) => $q->where('name', 'like', "%{$search}%")))
                     // Multi-day trips show which day the row is right before the name: "1/3 Název".
-                    ->formatStateUsing(fn (?string $state, TripDay $record) => ($record->trip?->days_count ?? 1) > 1
-                        ? $record->order.'/'.$record->trip->days_count.' '.$state
-                        : $state),
+                    // The name is pre-filled as "Program, Klient"; the client has its own column here,
+                    // so the list drops that trailing ", Klient" (the stored name is untouched).
+                    ->formatStateUsing(function (?string $state, TripDay $record) {
+                        $client = trim((string) $record->trip?->client_name);
+                        if ($client !== '' && $state !== null && Str::endsWith($state, ', '.$client)) {
+                            $state = Str::beforeLast($state, ', '.$client);
+                        }
+
+                        return ($record->trip?->days_count ?? 1) > 1
+                            ? $record->order.'/'.$record->trip->days_count.' '.$state
+                            : $state;
+                    }),
                 TextColumn::make('trip.type')->label('Typ')->badge()->toggleable()
-                    ->formatStateUsing(fn (string $state) => Trip::TYPES[$state] ?? $state)
+                    // Short label – the full "Akce s instruktorem" badge is the widest thing in the row.
+                    ->formatStateUsing(fn (string $state) => ['guided' => 'Instruktor', 'rental' => 'Půjčovna'][$state] ?? $state)
                     ->color(fn (string $state) => $state === 'rental' ? 'warning' : 'info'),
                 TextColumn::make('trip.program.name')->label('Program')->placeholder('—')->toggleable(isToggledHiddenByDefault: true)->wrap(),
                 TextColumn::make('trip.client_name')->label('Klient')->placeholder('—')->toggleable()->wrap()
+                    ->extraHeaderAttributes(['style' => 'min-width: 9rem'])
                     ->searchable(query: fn (Builder $query, string $search) => $query->whereHas('trip', fn ($q) => $q->where('client_name', 'like', "%{$search}%"))),
                 // Weekday inline ("Po 24.11.2026") instead of a second line – keeps the rows low.
                 TextColumn::make('date')->label('Datum')->sortable()->toggleable()
@@ -76,6 +90,7 @@ class TripsTable
                         return $time ? ($record->start_time ? 'start ' : 'sraz ').substr((string) $time, 0, 5) : null;
                     }),
                 TextColumn::make('section')->label('Úsek')->toggleable()->wrap()->placeholder('—')
+                    ->extraHeaderAttributes(['style' => 'min-width: 11rem'])
                     ->state(fn (TripDay $record) => $record->sectionLabel()),
                 TextColumn::make('trip.planned_paying_count')->label('Platících')->numeric()->toggleable()
                     ->formatStateUsing(fn ($state, TripDay $record) => $state.($record->trip?->planned_escort_count ? ' + '.$record->trip->planned_escort_count.' dopr.' : '')),
@@ -126,15 +141,18 @@ class TripsTable
                 self::tripFilter('trip_program_id', 'Program', fn () => TripProgram::orderBy('name')->pluck('name', 'id')->all())
                     ->searchable(),
             ])
+            // Icon-only row actions (labels as tooltips) leave the space to the trip names.
             ->recordActions([
                 Action::make('sheet')
                     ->label('Tisk rozpisu')
+                    ->iconButton()->tooltip('Tisk rozpisu')
                     ->icon('heroicon-o-printer')
                     ->color('gray')
                     ->url(fn (TripDay $record) => route('trip.sheet', $record->trip_id))
                     ->openUrlInNewTab(),
                 Action::make('edit')
                     ->label('Upravit')
+                    ->iconButton()->tooltip('Upravit')
                     ->icon('heroicon-o-pencil-square')
                     ->url(fn (TripDay $record) => TripResource::getUrl('edit', ['record' => $record->trip_id])),
                 self::deleteAction(),
@@ -174,6 +192,7 @@ class TripsTable
     {
         return Action::make('delete')
             ->label('Smazat')
+            ->iconButton()->tooltip('Smazat')
             ->icon('heroicon-o-trash')
             ->color('danger')
             ->requiresConfirmation()
